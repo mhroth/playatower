@@ -73,20 +73,17 @@ int tspi_write(TinySpi *tspi, int num_bytes, uint8_t *data) {
   assert(tspi != NULL);
   assert(data != NULL);
 
-  struct spi_ioc_transfer spi[num_bytes];
-  memset(spi, 0, sizeof(struct spi_ioc_transfer) * num_bytes);
+  struct spi_ioc_transfer spi = {
+    .tx_buf = (unsigned long) data,
+    .rx_buf = 0, // don't care about receicing
+    .len = num_bytes,
+    .delay_usecs = 0,
+    .speed_hz = tspi->speed,
+    .bits_per_word = 8,
+    .cs_change = 0
+  };
 
-  for (int i = 0 ; i < num_bytes ; i++) {
-    spi[i].tx_buf        = (unsigned long) (data + i); // transmit from "data"
-    spi[i].rx_buf        = (unsigned long) (data + i); // receive into "data"
-    spi[i].len           = sizeof(*(data + i));
-    spi[i].delay_usecs   = 0;
-    spi[i].speed_hz      = tspi->speed;
-    spi[i].bits_per_word = 8; // spi_bitsPerWord
-    spi[i].cs_change = 0;
-  }
-
-  int ret = ioctl(tspi->fd, SPI_IOC_MESSAGE(num_bytes), &spi);
+  int ret = ioctl(tspi->fd, SPI_IOC_MESSAGE(1), &spi);
   if (ret == -1) {
     printf("TinySPI ioctl write fail: %s\n", strerror(errno));
     assert(0 && "Error while sending SPI message.");
