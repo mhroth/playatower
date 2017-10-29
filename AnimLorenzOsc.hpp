@@ -24,7 +24,10 @@ class AnimLorenzOsc: public Animation {
   AnimLorenzOsc(uint32_t numLeds, uint8_t global);
   ~AnimLorenzOsc();
 
-  void process(float dt, uint8_t *data);
+  void process(float dt, uint8_t *data) override;
+
+ private:
+  float t;
 };
 
 #endif // _ANIM_LORENZ_OSC_HPP_

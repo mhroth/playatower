@@ -58,6 +58,7 @@ int tspi_open(TinySpi *tspi, const char *path, uint32_t spi_speed) {
   assert((ret == 0) && "Write speed could not be set.");
 
   tspi->fd = fd;
+  tspi->speed = spi_speed;
   return fd;
 }
 
@@ -74,8 +75,8 @@ int tspi_write(TinySpi *tspi, int num_bytes, uint8_t *data) {
   assert(data != NULL);
 
   struct spi_ioc_transfer spi = {
-    .tx_buf = (unsigned long) data,
-    .rx_buf = 0, // don't care about receicing
+    .tx_buf = (uint64_t) data,
+    .rx_buf = 0, // don't care about receiving
     .len = num_bytes,
     .delay_usecs = 0,
     .speed_hz = tspi->speed,

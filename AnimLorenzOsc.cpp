@@ -18,7 +18,7 @@
 
 AnimLorenzOsc::AnimLorenzOsc(uint32_t numLeds, uint8_t global) :
     Animation(numLeds, global) {
-  // nothing to do
+  t = 0.0f;
 }
 
 AnimLorenzOsc::~AnimLorenzOsc() {
@@ -26,7 +26,13 @@ AnimLorenzOsc::~AnimLorenzOsc() {
 }
 
 void AnimLorenzOsc::process(float dt, uint8_t *data) {
+  t += dt;
+
   for (int i = 0; i < numLeds; ++i) {
-    write_pixel_rgb(data, i, 1.0f, 0.5f, 0.25f);
+    float f = ((i/((float) numLeds)) * (2.0f-0.1f)) + 0.1f;
+    float x = sinf(2.0f * M_PI * f * t);
+    write_pixel_rgb(data, i, 0.0f, 0.0f, x);
   }
+
+  ++step;
 }

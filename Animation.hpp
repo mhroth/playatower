@@ -20,21 +20,29 @@
 #include <assert.h>
 #include <math.h>
 #include <stdint.h>
+#include <stdio.h>
 
 class Animation {
  public:
   Animation(uint32_t numLeds, uint8_t global=31);
   virtual ~Animation() {}
 
-  void setGlobal(uint8_t g) { global = g & 0x1F; }
+  /** Set the global brightness factor. [0-31] */
+  void setGlobal(uint8_t g) { global = (g & 0x1F); }
 
   virtual void process(float dt, uint8_t *data) = 0;
 
  protected:
   void write_pixel_rgb(uint8_t *data, int i, float r, float g, float b);
 
+  /** The global brightness factor. [0-31] */
   uint8_t global;
+
+  /** The total number of LEDs in this animation. */
   uint32_t numLeds;
+
+  /** The number of frames processed so far by this animation. */
+  uint32_t step;
 };
 
 #endif // _ANIMATION_HPP_

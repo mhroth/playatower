@@ -65,7 +65,7 @@ int main(int narg, char **argc) {
   const uint64_t NS_FRAME = (FPS > 0.0) ? (uint64_t) (1000000000.0/FPS) : 0;
   printf("* fps: %g\n", FPS);
 
-  const uint8_t GLOBAL_BRIGHTNESS = (narg > 3) ? (atoi(argc[3]) | 0x1F) : 31;
+  const uint8_t GLOBAL_BRIGHTNESS = (narg > 3) ? (atoi(argc[3]) & 0x1F) : 31;
   printf("* global: %i/31\n", GLOBAL_BRIGHTNESS);
 
   // open the SPI interface
@@ -75,8 +75,9 @@ int main(int narg, char **argc) {
 
   // prepare SPI data
   // https://cpldcpu.com/2014/11/30/understanding-the-apa102-superled/
-  const int NUM_SPI_BYTES = 4 + (4*NUM_LEDS) + ((NUM_LEDS/2/8) + 1);
-  uint8_t *spi_data = (uint8_t *) malloc(NUM_SPI_BYTES * sizeof(uint8_t));
+  const int NUM_SPI_BYTES = 4 + (4*NUM_LEDS) + ((NUM_LEDS>>4) + 1);
+  // TODO(mhroth): unknown why 3x bytes are needed. But otherwise free(spi_data) faile!
+  uint8_t *spi_data = (uint8_t *) malloc(3 * NUM_SPI_BYTES * sizeof(uint8_t));
   assert(spi_data != nullptr);
 
   float dt = 0.0f;
@@ -85,27 +86,24 @@ int main(int narg, char **argc) {
 
     // calculate animation
     anim->process(dt, spi_data);
-    // for (int i = 0; i < NUM_LEDS; i++) {
-    //   printf("0x%X ", ((uint32_t *) spi_data)[i+1]);
-    // }
-    // printf("\n");
 
     // send SPI
     memset(spi_data, 4, 0x00); // header
-    memset(spi_data + (4*(NUM_LEDS+1)), (NUM_LEDS/2/8)+1, 0xFF); // trailer
+    memset(spi_data + (4*(NUM_LEDS+1)), (NUM_LEDS>>4)+1, 0xFF); // trailer
     tspi_write(&tspi, NUM_SPI_BYTES, spi_data);
 
     clock_gettime(CLOCK_REALTIME, &tock);
     timespec_subtract(&diff_tick, &tock, &tick);
     const int64_t elapsed_ns = (((int64_t) diff_tick.tv_sec) * SEC_TO_NS) + diff_tick.tv_nsec;
-    // printf("Frame prep-time: %gms\n", ((double) elapsed_ns)/1000000.0);
-    dt = 0.0f;
     if (elapsed_ns < NS_FRAME) {
       // there is never a need to sleep longer than 1 second (famous last words...)
       diff_tick.tv_sec = 0;
       diff_tick.tv_nsec = (long) (NS_FRAME-elapsed_ns);
-      dt = (float) (((double) diff_tick.tv_nsec) / 1000000000.0);
+      dt = (float) (1.0/FPS);
       nanosleep(&diff_tick, NULL);
+    } else {
+      dt = (float) (((double) elapsed_ns) / 1000000000.0);
+      if (FPS > 0.0) printf("Warning: frame underrun.\n");
     }
   }
 
