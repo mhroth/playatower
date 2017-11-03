@@ -21,8 +21,10 @@ Animation::Animation(uint32_t numLeds, uint8_t global) :
   // nothing to do
 }
 
-void Animation::write_pixel_rgb(uint8_t *data, int i, float r, float g, float b) {
+void Animation::set_pixel_rgb(uint8_t *data, int i, float r, float g, float b) {
   assert(data != nullptr);
+  assert(i >= 0 && i < numLeds);
+
   int j = (i+1)*4;
   data[j] = 0xE0 | global;
   data[j+1] = (uint8_t) (fminf(fmaxf(b, 0.0f), 1.0f) * 255.0f); // blue

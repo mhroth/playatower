@@ -14,22 +14,25 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _ANIM_LORENZ_OSC_HPP_
-#define _ANIM_LORENZ_OSC_HPP_
+#import "AnimPhasor.hpp"
 
-#import "Animation.hpp"
+AnimPhasor::AnimPhasor(uint32_t numLeds, uint8_t global) :
+    Animation(numLeds, global) {
+  t = 0.0f;
+}
 
-class AnimLorenzOsc: public Animation {
- public:
-  AnimLorenzOsc(uint32_t numLeds, uint8_t global);
-  ~AnimLorenzOsc();
+AnimPhasor::~AnimPhasor() {
+  // nothing to do
+}
 
-  void process(double dt, uint8_t *data) override;
+void AnimPhasor::process(double dt, uint8_t *data) {
+  t += (float) dt;
 
- private:
-  double x, y, z, dx, dy, dz;
-  double beta, rho, sigma;
-  double min_x, max_x, min_y, max_y, min_z, max_z;
-};
+  for (int i = 0; i < numLeds; ++i) {
+    float f = ((i/((float) numLeds)) * (2.0f-0.1f)) + 0.1f;
+    float x = sinf(2.0f * M_PI * f * t);
+    set_pixel_rgb(data, i, x, 0.0f, 0.0f);
+  }
 
-#endif // _ANIM_LORENZ_OSC_HPP_
+  ++step;
+}

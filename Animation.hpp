@@ -30,10 +30,10 @@ class Animation {
   /** Set the global brightness factor. [0-31] */
   void setGlobal(uint8_t g) { global = (g & 0x1F); }
 
-  virtual void process(float dt, uint8_t *data) = 0;
+  virtual void process(double dt, uint8_t *data) = 0;
 
  protected:
-  void write_pixel_rgb(uint8_t *data, int i, float r, float g, float b);
+  void set_pixel_rgb(uint8_t *data, int i, float r, float g, float b);
 
   /** The global brightness factor. [0-31] */
   uint8_t global;

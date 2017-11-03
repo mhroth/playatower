@@ -21,6 +21,7 @@
 #include <string.h>
 #include <time.h> // nanosleep, clock_gettime
 
+#include "AnimPhasor.hpp"
 #include "AnimLorenzOsc.hpp"
 
 #include "tiny_spi.h"
@@ -49,6 +50,7 @@ int main(int narg, char **argc) {
 
   TinySpi tspi;
   struct timespec tick, tock, diff_tick;
+  uint32_t global_step = 0; // the current frame index
 
   // register the SIGINT handler
   signal(SIGINT, &sigintHandler);
@@ -61,7 +63,8 @@ int main(int narg, char **argc) {
   }
   printf("* leds: %i\n", NUM_LEDS);
 
-  const double FPS = (narg > 2) ? atof(argc[2]) : -1.0;
+  const double FPS = (narg > 2) ? atof(argc[2]) : -1.0; // frames per second
+  const double SPF = 1.0/FPS; // second per frame
   const uint64_t NS_FRAME = (FPS > 0.0) ? (uint64_t) (1000000000.0/FPS) : 0;
   printf("* fps: %g\n", FPS);
 
@@ -75,21 +78,22 @@ int main(int narg, char **argc) {
 
   // prepare SPI data
   // https://cpldcpu.com/2014/11/30/understanding-the-apa102-superled/
-  const int NUM_SPI_BYTES = 4 + (4*NUM_LEDS) + ((NUM_LEDS>>4) + 1);
-  // TODO(mhroth): unknown why 3x bytes are needed. But otherwise free(spi_data) faile!
+  const int NUM_SPI_TRAILER_BYTES = (NUM_LEDS>>4) + 1;
+  const int NUM_SPI_BYTES = 4 + (4*NUM_LEDS) + NUM_SPI_TRAILER_BYTES;
+  // TODO(mhroth): unknown why 3x bytes are needed. But otherwise free(spi_data) fails!
   uint8_t *spi_data = (uint8_t *) malloc(3 * NUM_SPI_BYTES * sizeof(uint8_t));
   assert(spi_data != nullptr);
 
-  float dt = 0.0f;
+  double dt = 0.0;
   while (_keepRunning) {
     clock_gettime(CLOCK_REALTIME, &tick);
 
     // calculate animation
     anim->process(dt, spi_data);
 
-    // send SPI
-    memset(spi_data, 4, 0x00); // header
-    memset(spi_data + (4*(NUM_LEDS+1)), (NUM_LEDS>>4)+1, 0xFF); // trailer
+    // send LED data via SPI
+    // *((uint32_t *) spi_data) = 0; // clear the header
+    memset(spi_data + (4*(NUM_LEDS+1)), NUM_SPI_TRAILER_BYTES, 0xFF); // set the trailer
     tspi_write(&tspi, NUM_SPI_BYTES, spi_data);
 
     clock_gettime(CLOCK_REALTIME, &tock);
@@ -99,12 +103,15 @@ int main(int narg, char **argc) {
       // there is never a need to sleep longer than 1 second (famous last words...)
       diff_tick.tv_sec = 0;
       diff_tick.tv_nsec = (long) (NS_FRAME-elapsed_ns);
-      dt = (float) (1.0/FPS);
+      dt = SPF;
       nanosleep(&diff_tick, NULL);
     } else {
-      dt = (float) (((double) elapsed_ns) / 1000000000.0);
+      dt = ((double) elapsed_ns) / 1000000000.0;
       if (FPS > 0.0) printf("Warning: frame underrun.\n");
+      else if (global_step % 1000 == 0) printf("fps: %0.3ffps\n", 1.0/dt);
     }
+
+    ++global_step;
   }
 
   // close the SPI interface

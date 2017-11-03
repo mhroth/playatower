@@ -30,4 +30,4 @@ vst2: $(OBJC) $(OBJCXX)
 .PHONY: clean
 
 clean:
-	rm -f $(SRCDIR)/*.o $(OUTDIR)/*.a $(OUTDIR)/*.zip
+	rm -f $(SRCDIR)/*.o $(OUTDIR)/*.a $(OUTDIR)/playatower

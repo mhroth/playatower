@@ -72,17 +72,21 @@ int tspi_close(TinySpi *tspi) {
 
 int tspi_write(TinySpi *tspi, int num_bytes, uint8_t *data) {
   assert(tspi != NULL);
+  assert(num_bytes >= 0);
   assert(data != NULL);
 
-  struct spi_ioc_transfer spi = {
-    .tx_buf = (uint64_t) data,
-    .rx_buf = 0, // don't care about receiving
-    .len = num_bytes,
-    .delay_usecs = 0,
-    .speed_hz = tspi->speed,
-    .bits_per_word = 8,
-    .cs_change = 0
-  };
+  // https://raspberrypi.stackexchange.com/questions/65595/spi-transfer-fails-with-buffer-size-greater-than-4096
+  assert((num_bytes < 4096) && "SPI transfer size is too large.");
+
+  struct spi_ioc_transfer spi;
+  memset(&spi, 0, sizeof(struct spi_ioc_transfer));
+  spi.tx_buf = (uint64_t) data;
+  spi.rx_buf = 0; // don't care about receiving
+  spi.len = num_bytes;
+  spi.delay_usecs = 0;
+  spi.speed_hz = tspi->speed;
+  spi.bits_per_word = 8;
+  spi.cs_change = 0;
 
   int ret = ioctl(tspi->fd, SPI_IOC_MESSAGE(1), &spi);
   if (ret == -1) {

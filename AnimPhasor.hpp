@@ -14,22 +14,20 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _ANIM_LORENZ_OSC_HPP_
-#define _ANIM_LORENZ_OSC_HPP_
+#ifndef _ANIM_PHSAOR_HPP_
+#define _ANIM_PHSAOR_HPP_
 
 #import "Animation.hpp"
 
-class AnimLorenzOsc: public Animation {
+class AnimPhasor: public Animation {
  public:
-  AnimLorenzOsc(uint32_t numLeds, uint8_t global);
-  ~AnimLorenzOsc();
+  AnimPhasor(uint32_t numLeds, uint8_t global);
+  ~AnimPhasor();
 
   void process(double dt, uint8_t *data) override;
 
  private:
-  double x, y, z, dx, dy, dz;
-  double beta, rho, sigma;
-  double min_x, max_x, min_y, max_y, min_z, max_z;
+  float t;
 };
 
-#endif // _ANIM_LORENZ_OSC_HPP_
+#endif // _ANIM_PHSAOR_HPP_
