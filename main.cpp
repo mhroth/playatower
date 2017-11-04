@@ -24,6 +24,7 @@
 #include "AnimPhasor.hpp"
 #include "AnimLorenzOsc.hpp"
 #include "AnimLorenzOscFade.hpp"
+#include "AnimChuaOsc.hpp"
 
 #include "tiny_spi.h"
 
@@ -75,7 +76,7 @@ int main(int narg, char **argc) {
   // open the SPI interface
   tspi_open(&tspi, "/dev/spidev0.0", ONE_MHZ);
 
-  Animation *anim = new AnimLorenzOscFade(NUM_LEDS, GLOBAL_BRIGHTNESS);
+  Animation *anim = new AnimChuaOsc(NUM_LEDS, GLOBAL_BRIGHTNESS);
 
   // prepare SPI data
   // https://cpldcpu.com/2014/11/30/understanding-the-apa102-superled/

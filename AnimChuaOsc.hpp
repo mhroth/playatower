@@ -14,37 +14,28 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _ANIMATION_HPP_
-#define _ANIMATION_HPP_
+#ifndef _ANIM_CHUA_OSC_HPP_
+#define _ANIM_CHUA_OSC_HPP_
 
-#include <assert.h>
-#include <math.h>
-#include <stdint.h>
-#include <stdio.h>
+#import "Animation.hpp"
 
-class Animation {
+class AnimChuaOsc: public Animation {
  public:
-  Animation(uint32_t numLeds, uint8_t global=31);
-  virtual ~Animation() {}
+  AnimChuaOsc(uint32_t numLeds, uint8_t global);
+  ~AnimChuaOsc();
 
-  /** Set the global brightness factor. [0-31] */
-  void setGlobal(uint8_t g) { global = (g & 0x1F); }
+  void process(double dt, uint8_t *data) override;
 
-  virtual void process(double dt, uint8_t *data) = 0;
+ private:
+  void add_pixel_rgb(int i, float r, float g, float b, float a);
+  void add_pixel_hsl(int i, float h, float s, float l, float a);
 
- protected:
-  void set_pixel_rgb(uint8_t *data, int i, float r, float g, float b);
+  double t; // total elapsed time
+  double x, y, z, dx, dy, dz;
+  double min_x, max_x, min_y, max_y, min_z, max_z;
+  double min_dx, max_dx, min_dy, max_dy, min_dz, max_dz;
 
-  double lin_scale(double x, double min_in, double max_in, double min_out, double max_out);
-
-  /** The global brightness factor. [0-31] */
-  uint8_t global;
-
-  /** The total number of LEDs in this animation. */
-  uint32_t numLeds;
-
-  /** The number of frames processed so far by this animation. */
-  uint32_t step;
+  float *rgb_buffer;
 };
 
-#endif // _ANIMATION_HPP_
+#endif // _ANIM_CHUA_OSC_HPP_

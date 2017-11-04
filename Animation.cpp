@@ -31,3 +31,7 @@ void Animation::set_pixel_rgb(uint8_t *data, int i, float r, float g, float b) {
   data[j+2] = (uint8_t) (fminf(fmaxf(g, 0.0f), 1.0f) * 255.0f); // green
   data[j+3] = (uint8_t) (fminf(fmaxf(r, 0.0f), 1.0f) * 255.0f); // red
 }
+
+double Animation::lin_scale(double x, double min_in, double max_in, double min_out, double max_out) {
+  return ((x-min_in)/(max_in-min_in))*(max_out-min_out) + min_out;
+}
