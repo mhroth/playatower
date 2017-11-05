@@ -16,20 +16,9 @@
 
 #include "Animation.hpp"
 
-Animation::Animation(uint32_t numLeds, uint8_t global) :
-    numLeds(numLeds), global(global & 0x1F), step(0) {
-  // nothing to do
-}
-
-void Animation::set_pixel_rgb(uint8_t *data, int i, float r, float g, float b) {
-  assert(data != nullptr);
-  assert(i >= 0 && i < numLeds);
-
-  int j = (i+1)*4;
-  data[j] = 0xE0 | global;
-  data[j+1] = (uint8_t) (fminf(fmaxf(b, 0.0f), 1.0f) * 255.0f); // blue
-  data[j+2] = (uint8_t) (fminf(fmaxf(g, 0.0f), 1.0f) * 255.0f); // green
-  data[j+3] = (uint8_t) (fminf(fmaxf(r, 0.0f), 1.0f) * 255.0f); // red
+Animation::Animation(PixelBuffer *pixbuf) :
+    pixbuf(pixbuf), step(0) {
+  assert(pixbuf != nullptr);
 }
 
 double Animation::lin_scale(double x, double min_in, double max_in, double min_out, double max_out) {

@@ -21,10 +21,10 @@
 
 class AnimPhasor: public Animation {
  public:
-  AnimPhasor(uint32_t numLeds, uint8_t global);
+  AnimPhasor(PixelBuffer *pixbuf);
   ~AnimPhasor();
 
-  void process(double dt, uint8_t *data) override;
+  void process(double dt) override;
 
  private:
   float t;

@@ -19,8 +19,8 @@
 
 #import "AnimLorenzOsc.hpp"
 
-AnimLorenzOsc::AnimLorenzOsc(uint32_t numLeds, uint8_t global) :
-    Animation(numLeds, global) {
+AnimLorenzOsc::AnimLorenzOsc(PixelBuffer *pixbuf) :
+    Animation(pixbuf) {
   sigma = 10.0;
   rho = 28.0;
   beta = 8.0/3.0;
@@ -43,7 +43,7 @@ AnimLorenzOsc::~AnimLorenzOsc() {
   // nothing to do
 }
 
-void AnimLorenzOsc::process(double dt, uint8_t *data) {
+void AnimLorenzOsc::process(double dt) {
   // https://en.wikipedia.org/wiki/Lorenz_system
   dx = sigma * (y - x);
   dy = (x * (rho - z)) - y;
@@ -58,18 +58,16 @@ void AnimLorenzOsc::process(double dt, uint8_t *data) {
   min_z = fmin(min_z, z); max_z = fmax(max_z, z);
 
   // clear the pixel data
-  for (int i = 0; i < numLeds; ++i) {
-    set_pixel_rgb(data, i, 0.0f, 0.0f, 0.0f);
-  }
+  pixbuf->clear();
 
-  int i_r = (int) (((double) (numLeds-1)) * ((x - min_x) / (max_x - min_x)));
-  set_pixel_rgb(data, i_r, 1.0f, 0.0f, 0.0f);
+  int i_r = (int) (((double) (pixbuf->getNumLeds()-1)) * ((x - min_x) / (max_x - min_x)));
+  pixbuf->set_pixel_rgb(i_r, 1.0f, 0.0f, 0.0f);
 
-  int i_g = (int) (((double) (numLeds-1)) * ((y - min_y) / (max_y - min_y)));
-  set_pixel_rgb(data, i_g, 0.0f, 1.0f, 0.0f);
+  int i_g = (int) (((double) (pixbuf->getNumLeds()-1)) * ((y - min_y) / (max_y - min_y)));
+  pixbuf->set_pixel_rgb(i_g, 0.0f, 1.0f, 0.0f);
 
-  int i_b = (int) (((double) (numLeds-1)) * ((z - min_z) / (max_z - min_z)));
-  set_pixel_rgb(data, i_b, 0.0f, 0.0f, 1.0f);
+  int i_b = (int) (((double) (pixbuf->getNumLeds()-1)) * ((z - min_z) / (max_z - min_z)));
+  pixbuf->set_pixel_rgb(i_b, 0.0f, 0.0f, 1.0f);
 
   ++step;
 }

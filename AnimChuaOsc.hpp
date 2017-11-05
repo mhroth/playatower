@@ -21,21 +21,16 @@
 
 class AnimChuaOsc: public Animation {
  public:
-  AnimChuaOsc(uint32_t numLeds, uint8_t global);
+  AnimChuaOsc(PixelBuffer *pixbuf);
   ~AnimChuaOsc();
 
-  void process(double dt, uint8_t *data) override;
+  void process(double dt) override;
 
  private:
-  void add_pixel_rgb(int i, float r, float g, float b, float a);
-  void add_pixel_hsl(int i, float h, float s, float l, float a);
-
   double t; // total elapsed time
   double x, y, z, dx, dy, dz;
   double min_x, max_x, min_y, max_y, min_z, max_z;
   double min_dx, max_dx, min_dy, max_dy, min_dz, max_dz;
-
-  float *rgb_buffer;
 };
 
 #endif // _ANIM_CHUA_OSC_HPP_

@@ -16,8 +16,8 @@
 
 #import "AnimPhasor.hpp"
 
-AnimPhasor::AnimPhasor(uint32_t numLeds, uint8_t global) :
-    Animation(numLeds, global) {
+AnimPhasor::AnimPhasor(PixelBuffer *pixbuf) :
+    Animation(pixbuf) {
   t = 0.0f;
 }
 
@@ -25,13 +25,14 @@ AnimPhasor::~AnimPhasor() {
   // nothing to do
 }
 
-void AnimPhasor::process(double dt, uint8_t *data) {
+void AnimPhasor::process(double dt) {
   t += (float) dt;
 
-  for (int i = 0; i < numLeds; ++i) {
-    float f = ((i/((float) numLeds)) * (2.0f-0.1f)) + 0.1f;
+  const int N = pixbuf->getNumLeds();
+  for (int i = 0; i < N; ++i) {
+    float f = ((i/((float) N)) * (2.0f-0.1f)) + 0.1f;
     float x = sinf(2.0f * M_PI * f * t);
-    set_pixel_rgb(data, i, x, 0.0f, 0.0f);
+    pixbuf->set_pixel_rgb(i, x, 0.0f, 0.0f);
   }
 
   ++step;

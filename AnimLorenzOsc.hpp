@@ -21,10 +21,10 @@
 
 class AnimLorenzOsc: public Animation {
  public:
-  AnimLorenzOsc(uint32_t numLeds, uint8_t global);
+  AnimLorenzOsc(PixelBuffer *rgb_buffer);
   ~AnimLorenzOsc();
 
-  void process(double dt, uint8_t *data) override;
+  void process(double dt) override;
 
  private:
   double x, y, z, dx, dy, dz;

@@ -21,12 +21,14 @@
 #include <string.h>
 #include <time.h> // nanosleep, clock_gettime
 
+#include "tiny_spi.h"
+
+#include "PixelBuffer.hpp"
+
 #include "AnimPhasor.hpp"
 #include "AnimLorenzOsc.hpp"
 #include "AnimLorenzOscFade.hpp"
 #include "AnimChuaOsc.hpp"
-
-#include "tiny_spi.h"
 
 #define SEC_TO_NS 1000000000LL
 #define ONE_MHZ 1000000
@@ -72,31 +74,23 @@ int main(int narg, char **argc) {
 
   const uint8_t GLOBAL_BRIGHTNESS = (narg > 3) ? (atoi(argc[3]) & 0x1F) : 31;
   printf("* global: %i/31\n", GLOBAL_BRIGHTNESS);
+  printf("\n");
 
   // open the SPI interface
   tspi_open(&tspi, "/dev/spidev0.0", ONE_MHZ);
 
-  Animation *anim = new AnimChuaOsc(NUM_LEDS, GLOBAL_BRIGHTNESS);
-
-  // prepare SPI data
-  // https://cpldcpu.com/2014/11/30/understanding-the-apa102-superled/
-  const int NUM_SPI_TRAILER_BYTES = (NUM_LEDS>>4) + 1;
-  const int NUM_SPI_BYTES = 4 + (4*NUM_LEDS) + NUM_SPI_TRAILER_BYTES;
-  // TODO(mhroth): unknown why 3x bytes are needed. But otherwise free(spi_data) fails!
-  uint8_t *spi_data = (uint8_t *) malloc(3 * NUM_SPI_BYTES * sizeof(uint8_t));
-  assert(spi_data != nullptr);
+  PixelBuffer *pixbuf = new PixelBuffer(NUM_LEDS, GLOBAL_BRIGHTNESS);
+  Animation *anim = new AnimChuaOsc(pixbuf);
 
   double dt = 0.0;
   while (_keepRunning) {
     clock_gettime(CLOCK_REALTIME, &tick);
 
     // calculate animation
-    anim->process(dt, spi_data);
+    anim->process(dt);
 
     // send LED data via SPI
-    // *((uint32_t *) spi_data) = 0; // clear the header
-    memset(spi_data + (4*(NUM_LEDS+1)), NUM_SPI_TRAILER_BYTES, 0xFF); // set the trailer
-    tspi_write(&tspi, NUM_SPI_BYTES, spi_data);
+    tspi_write(&tspi, pixbuf->getNumSpiBytes(), pixbuf->getSpiBytes());
 
     clock_gettime(CLOCK_REALTIME, &tock);
     timespec_subtract(&diff_tick, &tock, &tick);
@@ -110,7 +104,12 @@ int main(int narg, char **argc) {
     } else {
       dt = ((double) elapsed_ns) / 1000000000.0;
       if (FPS > 0.0) printf("Warning: frame underrun.\n");
-      else if (global_step % 1000 == 0) printf("fps: %0.3ffps\n", 1.0/dt);
+      else if (global_step % 1000 == 0) {
+        const float watts = pixbuf->getWatts();
+        printf("\r| %0.1f fps | %0.3f Watts (%0.1f%%) |",
+            1.0/dt, watts, 100.0f*watts/pixbuf->getMaxWatts());
+        fflush(stdout);
+      }
     }
 
     ++global_step;
@@ -119,9 +118,9 @@ int main(int narg, char **argc) {
   // close the SPI interface
   tspi_close(&tspi);
 
-  free(spi_data);
-
   delete anim;
+
+  delete pixbuf;
 
   return 0;
 }
