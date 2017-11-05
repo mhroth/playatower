@@ -80,7 +80,7 @@ int main(int narg, char **argc) {
   tspi_open(&tspi, "/dev/spidev0.0", ONE_MHZ);
 
   PixelBuffer *pixbuf = new PixelBuffer(NUM_LEDS, GLOBAL_BRIGHTNESS);
-  Animation *anim = new AnimChuaOsc(pixbuf);
+  Animation *anim = new AnimLorenzOscFade(pixbuf);
 
   double dt = 0.0;
   while (_keepRunning) {

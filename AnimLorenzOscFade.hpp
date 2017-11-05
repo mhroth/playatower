@@ -31,9 +31,9 @@ class AnimLorenzOscFade: public Animation {
   double x, y, z, dx, dy, dz;
   double beta, rho, sigma;
   double min_x, max_x, min_y, max_y, min_z, max_z;
-  double min_dx, max_dx, min_dy, max_dy, min_dz, max_dz;
-  double c_h, c_s, c_l; // base HSL color
+  double max_dx, max_dy, max_dz;
   double max_speed;
+  double c_h, c_s, c_l; // base HSL color
 };
 
 #endif // _ANIM_LORENZ_OSC_FADE_HPP_
