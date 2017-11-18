@@ -3,9 +3,10 @@ CXX=clang++
 MKDIR=mkdir -p
 SRCDIR=.
 OUTDIR=.
-BASEFLAGS=
+BASEFLAGS=-mcpu=cortex-a7 -mfloat-abi=hard -mfpu=neon -mtune=cortex-a7
 CFLAGS=$(BASEFLAGS) -std=c11
 CXXFLAGS=$(BASEFLAGS) -std=c++11 -fno-exceptions -fno-rtti
+LIBFLAGS=-lpthread
 
 HEADERS=$(wildcard $(SRCDIR)/*.h)
 HEADERS+=$(wildcard $(SRCDIR)/*.hpp)
@@ -25,7 +26,7 @@ OBJCXX=$(CXXFILES:%.cpp=%.o)
 all: vst2
 
 vst2: $(OBJC) $(OBJCXX)
-	$(CXX) -o $(OUTDIR)/playatower $^
+	$(CXX) -o $(OUTDIR)/playatower $^ $(LIBFLAGS)
 
 .PHONY: clean
 

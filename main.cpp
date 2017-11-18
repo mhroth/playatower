@@ -14,13 +14,24 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <assert.h>
+#include <arpa/inet.h>
+#include <fcntl.h> // for open
+#include <ifaddrs.h>
 #include <signal.h>
-#include <stdlib.h>
-#include <stdint.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
+#include <sys/mman.h>
+#include <sys/socket.h>
 #include <time.h> // nanosleep, clock_gettime
+#include <unistd.h> // for close
 
+// #include <thread>
+#include <pthread.h>
+
+#include "HvLightPipe.h"
+#include "tinyosc.h"
 #include "tiny_spi.h"
 
 #include "PixelBuffer.hpp"
@@ -30,6 +41,7 @@
 #include "AnimLorenzOscFade.hpp"
 #include "AnimChuaOsc.hpp"
 #include "AnimFirefly.hpp"
+#include "AnimVanDerPol.hpp"
 
 #define SEC_TO_NS 1000000000LL
 #define ONE_MHZ 1000000
@@ -51,7 +63,8 @@ static void timespec_subtract(struct timespec *result, struct timespec *end, str
   }
 }
 
-static void *network_run(void *x);
+// declare the network run function
+static void *network_run(void *q);
 
 int main(int narg, char **argc) {
 
@@ -86,7 +99,7 @@ int main(int narg, char **argc) {
   tspi_open(&tspi, "/dev/spidev0.0", ONE_MHZ);
 
   PixelBuffer *pixbuf = new PixelBuffer(NUM_LEDS, GLOBAL_BRIGHTNESS);
-  Animation *anim = new AnimChuaOsc(pixbuf); // initialise with default animation
+  Animation *anim = new AnimPhasor(pixbuf); // initialise with default animation
 
   if (MAX_WATTS > 0.0f) {
     // if maximum watts is specified, reset global brightness so that over wattage can happen
@@ -94,14 +107,52 @@ int main(int narg, char **argc) {
     pixbuf->setGlobal(global);
   }
 
+  // start the network thread (with pipe)
+  HvLightPipe pipe;
+  hLp_init(&pipe, 4*1024); // 4KB pipe
+  pthread_t networkThread = 0;
+  pthread_create(&networkThread, NULL, &network_run, &pipe);
+
+  // default to no nightshift
+  float nightshift = 0.0f;
+
   // bool lastButtonState = 0;
-  // uint32_t anim_index = 0;
+  uint32_t anim_index = 0;
+  bool toNextAnim = false;
 
   double dt = 0.0;
   while (_keepRunning) {
 /*
     bool currentButtonState = GET_GPIO();
     if (lastButtonState == 0 && currentButtonState == 1) {
+      toNextAnum = true;
+    }
+    lastButtonState = currentButtonState;
+*/
+
+    clock_gettime(CLOCK_REALTIME, &tick);
+
+    // read messages from network
+    while (hLp_hasData(&pipe)) {
+      uint32_t numBytes = 0;
+      uint8_t *osc_buffer = hLp_getReadBuffer(&pipe, &numBytes);
+      assert(numBytes != 0);
+      assert(osc_buffer != nullptr);
+      tosc_message osc;
+      if (!tosc_parseMessage(&osc, (char *) osc_buffer, numBytes)) {
+        if (!strcmp(tosc_getAddress(&osc), "/next")) {
+          toNextAnim = true;
+        } else if (!strcmp(tosc_getAddress(&osc), "/global")) {
+          pixbuf->setGlobal((int32_t) tosc_getNextFloat(&osc));
+        } else if (!strcmp(tosc_getAddress(&osc), "/nightshift")) {
+          nightshift = tosc_getNextFloat(&osc); // update nightshift
+        }
+      }
+      hLp_consume(&pipe); // consume the message from the pipe
+    }
+
+    // check if we need to move to the next animation
+    if (toNextAnim) {
       // on button press
       delete anim;     // delete the existing animation
       pixbuf->clear(); // clear the pixel buffer
@@ -116,19 +167,17 @@ int main(int narg, char **argc) {
         case 3: anim = new AnimChuaOsc(pixbuf); break;
       }
 
-      FPS = anim->getPreferredFps();
+      // FPS = anim->getPreferredFps();
       dt = 0.0;
-    }
-    lastButtonState = currentButtonState;
-*/
 
-    clock_gettime(CLOCK_REALTIME, &tick);
+      toNextAnim = false;
+    }
 
     // calculate animation
     anim->process(dt);
 
     // send LED data via SPI
-    tspi_write(&tspi, pixbuf->getNumSpiBytes(), pixbuf->getSpiBytes());
+    tspi_write(&tspi, pixbuf->getNumSpiBytes(), pixbuf->getSpiBytes(nightshift));
 
     clock_gettime(CLOCK_REALTIME, &tock);
     timespec_subtract(&diff_tick, &tock, &tick);
@@ -144,8 +193,9 @@ int main(int narg, char **argc) {
       if (FPS > 0.0) printf("Warning: frame underrun.\n");
       else if (global_step % 1000 == 0) {
         const float watts = pixbuf->getWatts();
-        printf("\r| %6.1f fps | %7.3f Watts (%4.1f%%) | %9i frames | %2i global |",
-            1.0/dt, watts, 100.0f*watts/pixbuf->getMaxWatts(), global_step, pixbuf->getGlobal());
+        printf("\r| %6.1f fps | %7.3f Watts (%4.1f%%) | %9i frames | %2i global | %0.3f nightshift |",
+            1.0/dt, watts, 100.0f*watts/pixbuf->getMaxWatts(),
+            global_step, pixbuf->getGlobal(), nightshift);
         fflush(stdout);
       }
     }
@@ -153,14 +203,19 @@ int main(int narg, char **argc) {
     ++global_step;
   }
 
+  // network_thread.join(); // wait for the network thread to stop
+  pthread_join(networkThread, NULL);
+  hLp_free(&pipe);
   tspi_close(&tspi); // close the SPI interface
   delete anim; // delete the animation
   delete pixbuf; // delete the pixel buffer
 
   return 0;
 }
-/*
-void *network_run(void *x) {
+
+void *network_run(void *q) {
+  assert(q != nullptr);
+
   // open receive socket
   int fd = socket(AF_INET, SOCK_DGRAM, 0);
   assert(fd > 0);
@@ -171,41 +226,33 @@ void *network_run(void *x) {
   sin.sin_addr.s_addr = INADDR_ANY;
   bind(fd, (struct sockaddr *) &sin, sizeof(struct sockaddr_in));
 
-  // set up structs for select
-  fd_set rfds;
-  FD_ZERO(&rfds);
-  FD_SET(fd_receive, &rfds);
+  while (_keepRunning) {
+    // set up structs for select
+    fd_set rfds;
+    FD_ZERO(&rfds);
+    FD_SET(fd, &rfds);
 
-  // wait up to 1 second for new packet
-  struct timeval tv = {1, 0};
+    // wait up to X seconds for new packet
+    struct timeval tv = {0, 200000}; // sec, usec
 
-  if (select(fd_receive+1, &rfds, NULL, NULL, &tv) > 0) {
+    if (select(fd+1, &rfds, NULL, NULL, &tv) > 0) {
+      uint8_t network_buffer[1024]; // buffer into which network data is received
+      struct sockaddr_in sin;
+      int len = 0;
+      int sa_len = sizeof(struct sockaddr_in);
 
-    uint8_t buffer[1024]; // buffer into which network data is received
-    struct sockaddr_in sin;
-    int len = 0;
-    int sa_len = sizeof(struct sockaddr_in);
-    tosc_message osc;
-
-    while ((len = recvfrom(fd_receive, buffer, sizeof(buffer), 0, (struct sockaddr *) &sin, (socklen_t *) &sa_len)) > 0) {
-      // TODO(mhroth): put message on pipe
-
-      if (!tosc_parseMessage(&osc, buffer, len)) {
-        if (!strcmp(tosc_getAddress(&osc), "/next")) {
-          // TODO(mhroth): trigger next animation
-        } else if (!strcmp(tosc_getAddress(&osc), "/global")) {
-          int32_t global = tosc_getNextInt(&osc);
-          (uint8_t) (global & 0x1F);
-        } else if (!strcmp(tosc_getAddress(&osc), "/nightshift")) {
-          float nightshift = tosc_getNextFloat(&osc);
-        }
+      while ((len = recvfrom(fd, network_buffer, sizeof(network_buffer), 0, (struct sockaddr *) &sin, (socklen_t *) &sa_len)) > 0) {
+        // put message on pipe
+        uint8_t *pipe_buffer = hLp_getWriteBuffer((HvLightPipe *) q, len);
+        assert(pipe_buffer != nullptr);
+        memcpy(pipe_buffer, network_buffer, len);
+        hLp_produce((HvLightPipe *) q, len);
       }
     }
   }
 
-  // close the socket on exit
+  // close the receive socket
   close(fd);
 
-  return nullptr;
+  return NULL;
 }
-*/
