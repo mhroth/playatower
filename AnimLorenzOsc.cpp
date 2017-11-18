@@ -61,13 +61,13 @@ void AnimLorenzOsc::process(double dt) {
   pixbuf->clear();
 
   int i_r = (int) (((double) (pixbuf->getNumLeds()-1)) * ((x - min_x) / (max_x - min_x)));
-  pixbuf->set_pixel_rgb(i_r, 1.0f, 0.0f, 0.0f);
+  pixbuf->set_pixel_rgb_blend(i_r, 1.0f, 0.0f, 0.0f);
 
   int i_g = (int) (((double) (pixbuf->getNumLeds()-1)) * ((y - min_y) / (max_y - min_y)));
-  pixbuf->set_pixel_rgb(i_g, 0.0f, 1.0f, 0.0f);
+  pixbuf->set_pixel_rgb_blend(i_g, 0.0f, 1.0f, 0.0f);
 
   int i_b = (int) (((double) (pixbuf->getNumLeds()-1)) * ((z - min_z) / (max_z - min_z)));
-  pixbuf->set_pixel_rgb(i_b, 0.0f, 0.0f, 1.0f);
+  pixbuf->set_pixel_rgb_blend(i_b, 0.0f, 0.0f, 1.0f);
 
   ++step;
 }

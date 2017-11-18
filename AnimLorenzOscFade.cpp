@@ -73,12 +73,16 @@ void AnimLorenzOscFade::process(double dt) {
   y += dy * dt;
   z += dz * dt;
 
+  // measure coordinate bounds
   min_x = fmin(min_x, x); max_x = fmax(max_x, x);
   min_y = fmin(min_y, y); max_y = fmax(max_y, y);
   min_z = fmin(min_z, z); max_z = fmax(max_z, z);
-  max_dx = fmax(fabs(dx), max_dx);
-  max_dy = fmax(fabs(dy), max_dy);
-  max_dz = fmax(fabs(dz), max_dz);
+
+  // measure speed bounds (with auto reset)
+  const double s_decay = expf(-dt/300.0); // over 300 seconds
+  max_dx = fmax(fabs(dx), max_dx*s_decay);
+  max_dy = fmax(fabs(dy), max_dy*s_decay);
+  max_dz = fmax(fabs(dz), max_dz*s_decay);
 
   double speed = sqrt(dx*dx + dy*dy + dz*dz);
   max_speed = fmax(max_speed, speed);
@@ -90,19 +94,21 @@ void AnimLorenzOscFade::process(double dt) {
 
   double osc4 = sin(2.0 * M_PI * (1.0/(30*60.0)) * t); // 30 minutes
   c_h = lin_scale(osc4, -1.0, 1.0, 0.0, 360.0);
-  double a = lin_scale(speed, 0.0, max_speed, 30.0, 150.0);
+  // double a = lin_scale(speed, 0.0, max_speed, 0.0, 1.0);
+  double a = speed/max_speed;
+  a = lin_scale(a*a,  0.0, 1.0, 25.0, 150.0);
 
   int i_r = lin_scale(x, min_x, max_x, 0, N-1);
   double l_x = lin_scale(fabs(dx), 0.0, max_dx, 0.05, c_l);
-  pixbuf->add_pixel_hsl(i_r, c_h, c_s, l_x, 30.0f*dt);
+  pixbuf->set_pixel_hsl_blend(i_r, c_h, c_s, l_x, 30.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
 
   int i_g = lin_scale(y, min_y, max_y, 0, N-1);
   double l_y = lin_scale(fabs(dy), 0.0, max_dy, 0.05, c_l);
-  pixbuf->add_pixel_hsl(i_g, c_h+a, c_s, l_y, 30.0f*dt);
+  pixbuf->set_pixel_hsl_blend(i_g, c_h+a, c_s, l_y, 30.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
 
   int i_b = lin_scale(z, min_z, max_z, 0, N-1);
   double l_z = lin_scale(fabs(dz), 0.0, max_dz, 0.05, c_l);
-  pixbuf->add_pixel_hsl(i_b, c_h-a, c_s, l_z, 30.0f*dt);
+  pixbuf->set_pixel_hsl_blend(i_b, c_h-a, c_s, l_z, 30.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
 
   ++step;
 }

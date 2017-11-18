@@ -14,22 +14,38 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _ANIM_LORENZ_OSC_HPP_
-#define _ANIM_LORENZ_OSC_HPP_
+#include "AnimVanDerPol.hpp"
 
-#import "Animation.hpp"
+AnimVanDerPol::AnimVanDerPol(PixelBuffer *pixbuf) : Animation(pixbuf) {
+  x = 0.0;
+  y = 0.0;
+  u = 8.53;
+  t = 0.0f;
+}
 
-class AnimLorenzOsc: public Animation {
- public:
-  AnimLorenzOsc(PixelBuffer *pixbuf);
-  ~AnimLorenzOsc();
+AnimVanDerPol::~AnimVanDerPol() {
 
-  void process(double dt) override;
+}
 
- private:
-  double x, y, z, dx, dy, dz;
-  double beta, rho, sigma;
-  double min_x, max_x, min_y, max_y, min_z, max_z;
-};
+void AnimVanDerPol::process(double dt) {
+/*
+  t += dt;
 
-#endif // _ANIM_LORENZ_OSC_HPP_
+  // TODO(mhroth): display shit
+
+  for (int i = 0; i < numLeds; ++i) {
+    // evaporate energy
+
+    pixbuf->set_pixel_rgb_blend(i, 0.0f, 0.0f, 0.0f, dt, PixelBuffer::BlendMode::ADD);
+
+    float x = pdf_logNormal(i, x, sigma);
+
+    pixbuf->set_pixel_hsl_blend(i, 30.0f, 0.5f, x, 1.0f, PixelBuffer::BlendMode::SCREEN);
+  }
+
+  float dx = y;
+  float dy = u*(1.0 - x*x)*y - x + 1.2f*sinf(M_TAU*0.1f*t);
+  x += dx * dt;
+  y += dy * dt;
+*/
+}

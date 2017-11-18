@@ -14,22 +14,24 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _ANIM_LORENZ_OSC_HPP_
-#define _ANIM_LORENZ_OSC_HPP_
+#ifndef _ANIM_FIREFLY_HPP_
+#define _ANIM_FIREFLY_HPP_
 
 #import "Animation.hpp"
 
-class AnimLorenzOsc: public Animation {
+class AnimFirefly: public Animation {
  public:
-  AnimLorenzOsc(PixelBuffer *pixbuf);
-  ~AnimLorenzOsc();
+  AnimFirefly(PixelBuffer *pixbuf);
+  ~AnimFirefly();
 
   void process(double dt) override;
 
  private:
-  double x, y, z, dx, dy, dz;
-  double beta, rho, sigma;
-  double min_x, max_x, min_y, max_y, min_z, max_z;
+  double t;
+  float *phases;
+  float *frequencies;
+  float *states;
+  double *t_next;
 };
 
-#endif // _ANIM_LORENZ_OSC_HPP_
+#endif // _ANIM_FIREFLY_HPP_

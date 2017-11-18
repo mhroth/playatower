@@ -14,22 +14,23 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _ANIM_LORENZ_OSC_HPP_
-#define _ANIM_LORENZ_OSC_HPP_
+#ifndef _ANIM_VANDERPOL_HPP_
+#define _ANIM_VANDERPOL_HPP_
 
 #import "Animation.hpp"
 
-class AnimLorenzOsc: public Animation {
+// https://en.wikipedia.org/wiki/Van_der_Pol_oscillator
+class AnimVanDerPol: public Animation {
  public:
-  AnimLorenzOsc(PixelBuffer *pixbuf);
-  ~AnimLorenzOsc();
+  AnimVanDerPol(PixelBuffer *pixbuf);
+  ~AnimVanDerPol();
 
   void process(double dt) override;
 
  private:
-  double x, y, z, dx, dy, dz;
-  double beta, rho, sigma;
-  double min_x, max_x, min_y, max_y, min_z, max_z;
+  double x, y;
+  double u;
+  double t;
 };
 
-#endif // _ANIM_LORENZ_OSC_HPP_
+#endif // _ANIM_VANDERPOL_HPP_

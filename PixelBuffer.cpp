@@ -84,18 +84,21 @@ void PixelBuffer::clear() {
 }
 
 void PixelBuffer::apply_gain(float f) {
-  const int N = 3 * numLeds;
-  for (int i = 0; i < N; ++i) {
-    rgb[i] *= f;
+  const float alpha = 1.0f - f;
+  for (int i = 0; i < numLeds; ++i) {
+    set_pixel_rgb_blend(i, 0.0f, 0.0f, 0.0f, alpha, BlendMode::ADD);
   }
 }
 
 uint8_t *PixelBuffer::getSpiBytes(float n) {
+  // TODO(mhroth): just for fun, SIMD type conversion and table lookup,
+  // https://stackoverflow.com/questions/22158186/arm-neon-how-to-implement-a-256bytes-look-up-table
+
   const float n_b = 1.0f - n*0.75f;
   const float n_g = 1.0f - n*0.60f;
   for (int i = 0; i < numLeds; ++i) {
     int j = (i+1)*4;
-    spi_data[j] = 0xE0 | global;
+    spi_data[j+0] = 0xE0 | global;
     spi_data[j+1] = APA102_GAMMA[(uint8_t) (_clamp(rgb[i*3+2]) * n_b * 255.0f)]; // blue
     spi_data[j+2] = APA102_GAMMA[(uint8_t) (_clamp(rgb[i*3+1]) * n_g * 255.0f)]; // green
     spi_data[j+3] = APA102_GAMMA[(uint8_t) (_clamp(rgb[i*3+0]) * 255.0f)]; // red
@@ -104,33 +107,47 @@ uint8_t *PixelBuffer::getSpiBytes(float n) {
   return spi_data;
 }
 
-void PixelBuffer::set_pixel_rgb(int i, float r, float g, float b) {
+void PixelBuffer::set_pixel_rgb_blend(int i, float r, float g, float b, float a, BlendMode mode) {
   assert(i >= 0 && i < numLeds);
-
   const int j = 3 * i;
-  rgb[j+0] = r;
-  rgb[j+1] = g;
-  rgb[j+2] = b;
-}
 
-void PixelBuffer::add_pixel_rgb(int i, float r, float g, float b, float a) {
-  const int j = 3 * i;
-  // rgb[j+0] = (1.0f-a)*rgb[j+0] + a*r;
-  // rgb[j+1] = (1.0f-a)*rgb[j+1] + a*g;
-  // rgb[j+2] = (1.0f-a)*rgb[j+2] + a*b;
-  rgb[j+0] += a*r;
-  rgb[j+1] += a*g;
-  rgb[j+2] += a*b;
+  switch (mode) {
+    default:
+    case SET: {
+      rgb[j+0] = r; rgb[j+1] = g; rgb[j+2] = b;
+      break;
+    }
+    case ADD: {
+      const float z = 1.0f - a;
+      rgb[j+0] = a*r + z*rgb[j+0]; rgb[j+1] = a*g + z*rgb[j+1]; rgb[j+2] = a*b + z*rgb[j+2];
+      break;
+    }
+    case ACCUMULATE: {
+      rgb[j+0] += a*r; rgb[j+1] += a*g; rgb[j+2] += a*b;
+      break;
+    }
+    case DIFFERENCE: {
+      set_pixel_rgb_blend(i, fabsf(r-rgb[j+0]), fabsf(g-rgb[j+1]), fabsf(b-rgb[j+2]), a, BlendMode::ADD);
+      break;
+    }
+    case MULTIPLY: {
+      set_pixel_rgb_blend(i, rgb[j+0]*r, rgb[j+1]*g, rgb[j+2]*g, a, BlendMode::ADD);
+      break;
+    }
+    case SCREEN: {
+      rgb[j+0] = 1.0f-(r*rgb[j+0]); rgb[j+1] = 1.0f-(g*rgb[j+1]); rgb[j+2] = 1.0f-(b*rgb[j+2]);
+      break;
+    }
+  }
 }
 
 // http://www.rapidtables.com/convert/color/hsl-to-rgb.htm
-void PixelBuffer::add_pixel_hsl(int i, float h, float s, float l, float a) {
+void PixelBuffer::set_pixel_hsl_blend(int i, float h, float s, float l, float a, BlendMode mode) {
   // assert(h >= 0.0f && h < 360.0f);
   if (h < 0.0f) h += 360.0f;
   else if (h > 360.0f) h -= 360.0f;
-
-  assert(s >= 0.0f && s <= 1.0f);
-  assert(l >= 0.0f && l <= 1.0f);
+  s = fmaxf(0.0f, fminf(1.0f, s));
+  l = fmaxf(0.0f, fminf(1.0f, l));
 
   float C = (1.0f - fabsf(2.0f*l-1.0f)) * s;
   float X = ((((int) (h/60.0f)) % 2) == 0) ? C : 0.0f;
@@ -151,5 +168,5 @@ void PixelBuffer::add_pixel_hsl(int i, float h, float s, float l, float a) {
     r = C+m; g = 0.0f+m; b = X+m;
   }
 
-  add_pixel_rgb(i, r, g, b, a);
+  set_pixel_rgb_blend(i, r, g, b, a, mode);
 }

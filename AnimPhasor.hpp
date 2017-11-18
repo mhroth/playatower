@@ -28,6 +28,7 @@ class AnimPhasor: public Animation {
 
  private:
   float t;
+  float f_min, f_max;
 };
 
 #endif // _ANIM_PHSAOR_HPP_

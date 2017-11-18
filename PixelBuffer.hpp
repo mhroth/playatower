@@ -25,6 +25,18 @@
 
 class PixelBuffer {
  public:
+
+  // https://css-tricks.com/almanac/properties/m/mix-blend-mode/
+  // https://www.w3.org/TR/compositing-1
+  enum BlendMode : uint32_t {
+    SET,
+    ADD,
+    ACCUMULATE,
+    DIFFERENCE, // subtracts the darker of the two colors from the lightest color
+    MULTIPLY,
+    SCREEN, // multiplies the background and the content then complements the result
+  };
+
   PixelBuffer(uint32_t numLeds, uint8_t global=31);
   ~PixelBuffer();
 
@@ -57,10 +69,31 @@ class PixelBuffer {
    */
   uint8_t *getSpiBytes(float n=0.0f);
 
-  void set_pixel_rgb(int i, float r, float g, float b);
-  void add_pixel_rgb(int i, float r, float g, float b, float a);
-  void add_pixel_hsl(int i, float h, float s, float l, float a);
+  /**
+   * Set a pixel with a given RGBA value and blend mode.
+   *
+   * @param i  Pixel index.
+   * @param r  Red channel value.
+   * @param g  Green channel value.
+   * @param b  Blue channel value.
+   * @param a  Alpha value. Defaults to 1. [0,1]
+   * @param mode  Blend mode to combine the new and existing colors. Default to BlendMode::SET.
+   */
+  void set_pixel_rgb_blend(int i, float r, float g, float b, float a=1.0f, BlendMode mode=BlendMode::SET);
 
+  /**
+   * Set a pixel with a given HSLA value and blend mode. See @set_pixel_rgb_blend.
+   *
+   * @param i  Pixel index.
+   * @param h  Hue channel value.
+   * @param s  Saturation channel value.
+   * @param l  Luminosity channel value.
+   * @param a  Alpha value. Defaults to 1. [0,1]
+   * @param mode  Blend mode to combine the new and existing colors. Default to BlendMode::SET.
+   */
+  void set_pixel_hsl_blend(int i, float h, float s, float l, float a=1.0f, BlendMode mode=BlendMode::SET);
+
+  /** Clear the buffer, set all values to 0. */
   void clear();
 
   /** Multiply all RGB elements by f. */

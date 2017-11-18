@@ -19,6 +19,8 @@
 AnimPhasor::AnimPhasor(PixelBuffer *pixbuf) :
     Animation(pixbuf) {
   t = 0.0f;
+  f_min = 1/120.0f;
+  f_max = 0.5f;
 }
 
 AnimPhasor::~AnimPhasor() {
@@ -29,10 +31,15 @@ void AnimPhasor::process(double dt) {
   t += (float) dt;
 
   const int N = pixbuf->getNumLeds();
+  const float n = (float) N;
   for (int i = 0; i < N; ++i) {
-    float f = ((i/((float) N)) * (2.0f-0.1f)) + 0.1f;
-    float x = sinf(2.0f * M_PI * f * t);
-    pixbuf->set_pixel_rgb(i, x, 0.0f, 0.0f);
+    float f = ((f_max-f_min)*i/n) + f_min;
+    float y = fabsf(sinf(2.0f * M_PI * f * t));
+    if (y < 0.5f) {
+      pixbuf->set_pixel_rgb_blend(i, 0.0f*y/255.0f, 191.0f*y/255.0f, 255.0f*y/255.0f);
+    } else {
+      pixbuf->set_pixel_rgb_blend(i, y*153.0f/255.0f, y*50.0f/255.0f, y*204.0f/255.0f);
+    }
   }
 
   ++step;

@@ -29,6 +29,7 @@
 #include "AnimLorenzOsc.hpp"
 #include "AnimLorenzOscFade.hpp"
 #include "AnimChuaOsc.hpp"
+#include "AnimFirefly.hpp"
 
 #define SEC_TO_NS 1000000000LL
 #define ONE_MHZ 1000000
@@ -49,6 +50,8 @@ static void timespec_subtract(struct timespec *result, struct timespec *end, str
     result->tv_nsec = end->tv_nsec - start->tv_nsec;
   }
 }
+
+static void *network_run(void *x);
 
 int main(int narg, char **argc) {
 
@@ -74,16 +77,51 @@ int main(int narg, char **argc) {
 
   const uint8_t GLOBAL_BRIGHTNESS = (narg > 3) ? (atoi(argc[3]) & 0x1F) : 31;
   printf("* global: %i/31\n", GLOBAL_BRIGHTNESS);
+
+  const float MAX_WATTS = (narg > 4) ? atof(argc[4]) : -1.0f;
+  printf("* max. watts: %0.3f\n", MAX_WATTS);
   printf("\n");
 
   // open the SPI interface
   tspi_open(&tspi, "/dev/spidev0.0", ONE_MHZ);
 
   PixelBuffer *pixbuf = new PixelBuffer(NUM_LEDS, GLOBAL_BRIGHTNESS);
-  Animation *anim = new AnimLorenzOscFade(pixbuf);
+  Animation *anim = new AnimChuaOsc(pixbuf); // initialise with default animation
+
+  if (MAX_WATTS > 0.0f) {
+    // if maximum watts is specified, reset global brightness so that over wattage can happen
+    uint8_t global = (uint8_t) (31.0f*MAX_WATTS/pixbuf->getMaxWatts());
+    pixbuf->setGlobal(global);
+  }
+
+  // bool lastButtonState = 0;
+  // uint32_t anim_index = 0;
 
   double dt = 0.0;
   while (_keepRunning) {
+/*
+    bool currentButtonState = GET_GPIO();
+    if (lastButtonState == 0 && currentButtonState == 1) {
+      // on button press
+      delete anim;     // delete the existing animation
+      pixbuf->clear(); // clear the pixel buffer
+
+      // instantiate the next animation
+      anim_index = (anim_index+1) % 4;
+      switch (anim_index) {
+        default:
+        case 0: anim = new AnimPhasor(pixbuf); break;
+        case 1: anim = new AnimLorenzOsc(pixbuf); break;
+        case 2: anim = new AnimLorenzOscFade(pixbuf); break;
+        case 3: anim = new AnimChuaOsc(pixbuf); break;
+      }
+
+      FPS = anim->getPreferredFps();
+      dt = 0.0;
+    }
+    lastButtonState = currentButtonState;
+*/
+
     clock_gettime(CLOCK_REALTIME, &tick);
 
     // calculate animation
@@ -106,8 +144,8 @@ int main(int narg, char **argc) {
       if (FPS > 0.0) printf("Warning: frame underrun.\n");
       else if (global_step % 1000 == 0) {
         const float watts = pixbuf->getWatts();
-        printf("\r| %0.1f fps | %0.3f Watts (%0.1f%%) |",
-            1.0/dt, watts, 100.0f*watts/pixbuf->getMaxWatts());
+        printf("\r| %6.1f fps | %7.3f Watts (%4.1f%%) | %9i frames | %2i global |",
+            1.0/dt, watts, 100.0f*watts/pixbuf->getMaxWatts(), global_step, pixbuf->getGlobal());
         fflush(stdout);
       }
     }
@@ -115,12 +153,59 @@ int main(int narg, char **argc) {
     ++global_step;
   }
 
-  // close the SPI interface
-  tspi_close(&tspi);
-
-  delete anim;
-
-  delete pixbuf;
+  tspi_close(&tspi); // close the SPI interface
+  delete anim; // delete the animation
+  delete pixbuf; // delete the pixel buffer
 
   return 0;
 }
+/*
+void *network_run(void *x) {
+  // open receive socket
+  int fd = socket(AF_INET, SOCK_DGRAM, 0);
+  assert(fd > 0);
+  fcntl(fd, F_SETFL, O_NONBLOCK); // set the socket to non-blocking
+  struct sockaddr_in sin;
+  sin.sin_family = AF_INET;
+  sin.sin_port = htons(2018); // port 2018
+  sin.sin_addr.s_addr = INADDR_ANY;
+  bind(fd, (struct sockaddr *) &sin, sizeof(struct sockaddr_in));
+
+  // set up structs for select
+  fd_set rfds;
+  FD_ZERO(&rfds);
+  FD_SET(fd_receive, &rfds);
+
+  // wait up to 1 second for new packet
+  struct timeval tv = {1, 0};
+
+  if (select(fd_receive+1, &rfds, NULL, NULL, &tv) > 0) {
+
+    uint8_t buffer[1024]; // buffer into which network data is received
+    struct sockaddr_in sin;
+    int len = 0;
+    int sa_len = sizeof(struct sockaddr_in);
+    tosc_message osc;
+
+    while ((len = recvfrom(fd_receive, buffer, sizeof(buffer), 0, (struct sockaddr *) &sin, (socklen_t *) &sa_len)) > 0) {
+      // TODO(mhroth): put message on pipe
+
+      if (!tosc_parseMessage(&osc, buffer, len)) {
+        if (!strcmp(tosc_getAddress(&osc), "/next")) {
+          // TODO(mhroth): trigger next animation
+        } else if (!strcmp(tosc_getAddress(&osc), "/global")) {
+          int32_t global = tosc_getNextInt(&osc);
+          (uint8_t) (global & 0x1F);
+        } else if (!strcmp(tosc_getAddress(&osc), "/nightshift")) {
+          float nightshift = tosc_getNextFloat(&osc);
+        }
+      }
+    }
+  }
+
+  // close the socket on exit
+  close(fd);
+
+  return nullptr;
+}
+*/

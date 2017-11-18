@@ -24,3 +24,16 @@ Animation::Animation(PixelBuffer *pixbuf) :
 double Animation::lin_scale(double x, double min_in, double max_in, double min_out, double max_out) {
   return ((x-min_in)/(max_in-min_in))*(max_out-min_out) + min_out;
 }
+
+float Animation::pdf_normal(float x, float mu, float sigma) {
+  assert(sigma >= 0.0f);
+  const float a = (x - mu) / sigma;
+  return expf(-0.5*a*a) / (sigma*M_SQRT_TAU);
+}
+
+float Animation::pdf_logNormal(float x, float mu, float sigma) {
+  assert(x > 0.0f);
+  assert(sigma > 0.0f);
+  const float a = (logf(x) - mu) / sigma;
+  return expf(-0.5*a*a) / (x*sigma*M_SQRT_TAU);
+}
