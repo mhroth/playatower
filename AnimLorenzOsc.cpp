@@ -32,7 +32,6 @@ AnimLorenzOsc::AnimLorenzOsc(PixelBuffer *pixbuf) :
   z = ((double) rand()) / ((double) RAND_MAX);
   double norm = sqrt(x*x + y*y + z*z);
   x /= norm; y /= norm; z /= norm;
-  printf("AnimLorenzOsc starting point: (%0.3f, %0.3f, %0.3f)\n", x, y, z);
 
   min_x = INFINITY; max_x = -INFINITY;
   min_y = INFINITY; max_y = -INFINITY;

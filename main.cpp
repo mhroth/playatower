@@ -18,6 +18,7 @@
 #include <arpa/inet.h>
 #include <fcntl.h> // for open
 #include <ifaddrs.h>
+#include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -26,9 +27,6 @@
 #include <sys/socket.h>
 #include <time.h> // nanosleep, clock_gettime
 #include <unistd.h> // for close
-
-// #include <thread>
-#include <pthread.h>
 
 #include "HvLightPipe.h"
 #include "tinyosc.h"
@@ -45,6 +43,25 @@
 
 #define SEC_TO_NS 1000000000LL
 #define ONE_MHZ 1000000
+#define GPIO_INPUT_PIN 2
+
+
+// https://elinux.org/RPi_GPIO_Code_Samples#Direct_register_access
+#define BCM2708_PERI_BASE 0x3F000000
+#define GPIO_BASE (BCM2708_PERI_BASE + 0x200000) // GPIO controller
+#define PAGE_SIZE (4*1024)
+#define BLOCK_SIZE (4*1024)
+
+// GPIO setup macros. Always use INP_GPIO(x) before using OUT_GPIO(x) or SET_GPIO_ALT(x,y)
+static volatile unsigned int *gpio;
+#define INP_GPIO(g) *(gpio+((g)/10)) &= ~(7<<(((g)%10)*3))
+#define OUT_GPIO(g) *(gpio+((g)/10)) |=  (1<<(((g)%10)*3))
+#define SET_GPIO_ALT(g,a) *(gpio+(((g)/10))) |= (((a)<=3?(a)+4:(a)==4?3:2)<<(((g)%10)*3))
+#define GPIO_SET *(gpio+7) // sets bits which are 1 ignores bits which are 0
+#define GPIO_CLR *(gpio+10) // clears bits which are 1 ignores bits which are 0
+#define GET_GPIO(g) (*(gpio+13)&(1<<g)) // 0 if LOW, (1<<g) if HIGH
+#define GPIO_PULL *(gpio+37) // Pull up/pull down
+#define GPIO_PULLCLK0 *(gpio+38) // Pull up/pull down clock
 
 static volatile bool _keepRunning = true;
 
@@ -61,6 +78,34 @@ static void timespec_subtract(struct timespec *result, struct timespec *end, str
     result->tv_sec = end->tv_sec - start->tv_sec;
     result->tv_nsec = end->tv_nsec - start->tv_nsec;
   }
+}
+
+// Set up a memory regions to access GPIO
+void gpio_open() {
+  // open /dev/mem (requires sudo)
+  // open /dev/gpiomem (does not require sudo)
+  int fd = open("/dev/gpiomem", O_RDWR|O_SYNC);
+  assert(fd > 0 && "Can't open /dev/gpiomem");
+
+  // mmap GPIO
+  void *gpio_map = mmap(
+    NULL,                 // Any adddress in our space will do
+    BLOCK_SIZE,           // Map length
+    PROT_READ|PROT_WRITE, // Enable reading & writting to mapped memory
+    MAP_SHARED,           // Shared with other processes
+    fd,                   // File to map
+    GPIO_BASE             // Offset to GPIO peripheral
+  );
+
+  close(fd); // No need to keep fd open after mmap
+
+  if (gpio_map == MAP_FAILED) {
+    printf("mmap error %d\n", (int)gpio_map); // errno also set!
+    exit(-1);
+  }
+
+  // always use volatile pointer
+  gpio = (volatile unsigned *) gpio_map;
 }
 
 // declare the network run function
@@ -98,6 +143,10 @@ int main(int narg, char **argc) {
   // open the SPI interface
   tspi_open(&tspi, "/dev/spidev0.0", ONE_MHZ);
 
+  // open the GPIO interface
+  gpio_open();
+  INP_GPIO(GPIO_INPUT_PIN); // configure GPIO pin as input
+
   PixelBuffer *pixbuf = new PixelBuffer(NUM_LEDS, GLOBAL_BRIGHTNESS);
   Animation *anim = new AnimPhasor(pixbuf); // initialise with default animation
 
@@ -116,21 +165,21 @@ int main(int narg, char **argc) {
   // default to no nightshift
   float nightshift = 0.0f;
 
-  // bool lastButtonState = 0;
+  int lastButtonState = 1; // GPIO pin is high when *not* connected
   uint32_t anim_index = 0;
   bool toNextAnim = false;
 
   double dt = 0.0;
   while (_keepRunning) {
-/*
-    bool currentButtonState = GET_GPIO();
-    if (lastButtonState == 0 && currentButtonState == 1) {
-      toNextAnum = true;
-    }
-    lastButtonState = currentButtonState;
-*/
 
     clock_gettime(CLOCK_REALTIME, &tick);
+
+    // check the state of the button
+    int currentButtonState = GET_GPIO(GPIO_INPUT_PIN);
+    if (lastButtonState != 0 && currentButtonState == 0) {
+      toNextAnim = true;
+    }
+    lastButtonState = currentButtonState;
 
     // read messages from network
     while (hLp_hasData(&pipe)) {
@@ -158,13 +207,14 @@ int main(int narg, char **argc) {
       pixbuf->clear(); // clear the pixel buffer
 
       // instantiate the next animation
-      anim_index = (anim_index+1) % 4;
+      anim_index = (anim_index+1) % 5;
       switch (anim_index) {
         default:
         case 0: anim = new AnimPhasor(pixbuf); break;
         case 1: anim = new AnimLorenzOsc(pixbuf); break;
         case 2: anim = new AnimLorenzOscFade(pixbuf); break;
         case 3: anim = new AnimChuaOsc(pixbuf); break;
+        case 4: anim = new AnimVanDerPol(pixbuf); break;
       }
 
       // FPS = anim->getPreferredFps();
@@ -203,8 +253,8 @@ int main(int narg, char **argc) {
     ++global_step;
   }
 
-  // network_thread.join(); // wait for the network thread to stop
-  pthread_join(networkThread, NULL);
+  munmap((void *) gpio, BLOCK_SIZE); // unmap the gpio memory
+  pthread_join(networkThread, NULL); // wait for the network thread to stop
   hLp_free(&pipe);
   tspi_close(&tspi); // close the SPI interface
   delete anim; // delete the animation
