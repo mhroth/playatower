@@ -26,6 +26,8 @@ class AnimChuaOsc: public Animation {
 
   void process(double dt) override;
 
+  const char *getName() override { return "Chua Oscillator"; }
+
  private:
   double t; // total elapsed time
   double x, y, z, dx, dy, dz;

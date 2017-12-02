@@ -14,26 +14,22 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _ANIM_FIREFLY_HPP_
-#define _ANIM_FIREFLY_HPP_
+#ifndef _ANIM_LIGHTHOUSE_HPP_
+#define _ANIM_LIGHTHOUSE_HPP_
 
 #import "Animation.hpp"
 
-class AnimFirefly: public Animation {
+class AnimLighthouse: public Animation {
  public:
-  AnimFirefly(PixelBuffer *pixbuf);
-  ~AnimFirefly();
+  AnimLighthouse(PixelBuffer *pixbuf);
+  ~AnimLighthouse();
 
   void process(double dt) override;
 
-  const char *getName() override { return "Firefly"; }
+  const char *getName() override { return "Lighthouse"; }
 
  private:
   double t;
-  float *phases;
-  float *frequencies;
-  float *states;
-  double *t_next;
 };
 
-#endif // _ANIM_FIREFLY_HPP_
+#endif // _ANIM_LIGHTHOUSE_HPP_

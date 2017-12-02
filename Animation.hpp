@@ -36,6 +36,8 @@ class Animation {
 
   virtual void process(double dt) = 0;
 
+  virtual const char *getName() { return "animation"; }
+
   /**
    * Returns the preferred frames per second of this animation.
    *

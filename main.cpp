@@ -40,6 +40,8 @@
 #include "AnimChuaOsc.hpp"
 #include "AnimFirefly.hpp"
 #include "AnimVanDerPol.hpp"
+#include "AnimAllWhite.hpp"
+#include "AnimLighthouse.hpp"
 
 #define SEC_TO_NS 1000000000LL
 #define ONE_MHZ 1000000
@@ -116,6 +118,8 @@ int main(int narg, char **argc) {
   TinySpi tspi;
   struct timespec tick, tock, diff_tick;
   uint32_t global_step = 0; // the current frame index
+  uint64_t total_elapsed_ns = 0;
+  uint64_t next_print_ns = 0;
 
   // register the SIGINT handler
   signal(SIGINT, &sigintHandler);
@@ -202,12 +206,14 @@ int main(int narg, char **argc) {
 
     // check if we need to move to the next animation
     if (toNextAnim) {
+      toNextAnim = false;
+
       // on button press
       delete anim;     // delete the existing animation
       pixbuf->clear(); // clear the pixel buffer
 
       // instantiate the next animation
-      anim_index = (anim_index+1) % 5;
+      anim_index = (anim_index+1) % 7;
       switch (anim_index) {
         default:
         case 0: anim = new AnimPhasor(pixbuf); break;
@@ -215,12 +221,12 @@ int main(int narg, char **argc) {
         case 2: anim = new AnimLorenzOscFade(pixbuf); break;
         case 3: anim = new AnimChuaOsc(pixbuf); break;
         case 4: anim = new AnimVanDerPol(pixbuf); break;
+        case 5: anim = new AnimAllWhite(pixbuf); break;
+        case 6: anim = new AnimLighthouse(pixbuf); break;
       }
 
       // FPS = anim->getPreferredFps();
       dt = 0.0;
-
-      toNextAnim = false;
     }
 
     // calculate animation
@@ -231,9 +237,9 @@ int main(int narg, char **argc) {
 
     clock_gettime(CLOCK_REALTIME, &tock);
     timespec_subtract(&diff_tick, &tock, &tick);
-    const int64_t elapsed_ns = (((int64_t) diff_tick.tv_sec) * SEC_TO_NS) + diff_tick.tv_nsec;
+    const uint64_t elapsed_ns = (((uint64_t) diff_tick.tv_sec) * SEC_TO_NS) + (uint64_t) diff_tick.tv_nsec;
     if (elapsed_ns < NS_FRAME) {
-      // there is never a need to sleep longer than 1 second (famous last words...)
+      // NOTE(mhroth): there is never a need to sleep longer than 1 second (famous last words...)
       diff_tick.tv_sec = 0;
       diff_tick.tv_nsec = (long) (NS_FRAME-elapsed_ns);
       dt = SPF;
@@ -241,21 +247,32 @@ int main(int narg, char **argc) {
     } else {
       dt = ((double) elapsed_ns) / 1000000000.0;
       if (FPS > 0.0) printf("Warning: frame underrun.\n");
-      else if (global_step % 1000 == 0) {
-        const float watts = pixbuf->getWatts();
-        printf("\r| %6.1f fps | %7.3f Watts (%4.1f%%) | %9i frames | %2i global | %0.3f nightshift |",
-            1.0/dt, watts, 100.0f*watts/pixbuf->getMaxWatts(),
-            global_step, pixbuf->getGlobal(), nightshift);
-        fflush(stdout);
-      }
+    }
+
+    // track total elapsed time
+    total_elapsed_ns += elapsed_ns;
+
+    // print info every second
+    if (total_elapsed_ns > next_print_ns) {
+      next_print_ns += SEC_TO_NS;
+
+      const float amps = pixbuf->getAmperes();
+      printf("\r| %6.1f fps | %7.3f Watts (%4.1f%%) [%4.1f Amps] | %9i frames | %2i global | %0.3f nightshift | %s",
+          1.0/dt, 5.0f*amps, 100.0f*5.0f*amps/pixbuf->getMaxWatts(), amps,
+          global_step, pixbuf->getGlobal(), nightshift, anim->getName());
+      fflush(stdout);
     }
 
     ++global_step;
   }
 
+  // turn off all LEDs
+  pixbuf->clear();
+  tspi_write(&tspi, pixbuf->getNumSpiBytes(), pixbuf->getSpiBytes(0.0f));
+
   munmap((void *) gpio, BLOCK_SIZE); // unmap the gpio memory
   pthread_join(networkThread, NULL); // wait for the network thread to stop
-  hLp_free(&pipe);
+  hLp_free(&pipe); // destroy the pipe from the network thread to the main thread
   tspi_close(&tspi); // close the SPI interface
   delete anim; // delete the animation
   delete pixbuf; // delete the pixel buffer

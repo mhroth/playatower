@@ -26,6 +26,8 @@ class AnimLorenzOsc: public Animation {
 
   void process(double dt) override;
 
+  const char *getName() override { return "Lorenz Oscillator"; }
+
  private:
   double x, y, z, dx, dy, dz;
   double beta, rho, sigma;

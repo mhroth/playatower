@@ -14,26 +14,19 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _ANIM_FIREFLY_HPP_
-#define _ANIM_FIREFLY_HPP_
+#ifndef _ANIM_ALL_WHITE_HPP_
+#define _ANIM_ALL_WHITE_HPP_
 
 #import "Animation.hpp"
 
-class AnimFirefly: public Animation {
+class AnimAllWhite: public Animation {
  public:
-  AnimFirefly(PixelBuffer *pixbuf);
-  ~AnimFirefly();
+  AnimAllWhite(PixelBuffer *pixbuf);
+  ~AnimAllWhite();
 
   void process(double dt) override;
 
-  const char *getName() override { return "Firefly"; }
-
- private:
-  double t;
-  float *phases;
-  float *frequencies;
-  float *states;
-  double *t_next;
+  const char *getName() override { return "All White"; }
 };
 
-#endif // _ANIM_FIREFLY_HPP_
+#endif // _ANIM_ALL_WHITE_HPP_

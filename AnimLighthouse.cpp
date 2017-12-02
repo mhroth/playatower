@@ -14,26 +14,27 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _ANIM_FIREFLY_HPP_
-#define _ANIM_FIREFLY_HPP_
+#include "AnimLighthouse.hpp"
 
-#import "Animation.hpp"
+#define LIGHTHOUSE_FREQ_R 1.0/15.5
+#define LIGHTHOUSE_FREQ_G 1.0/15.0
+#define LIGHTHOUSE_FREQ_B 1.0/14.5
 
-class AnimFirefly: public Animation {
- public:
-  AnimFirefly(PixelBuffer *pixbuf);
-  ~AnimFirefly();
+AnimLighthouse::AnimLighthouse(PixelBuffer *pixbuf) : Animation(pixbuf) {
+  t = 0.0;
+}
 
-  void process(double dt) override;
+AnimLighthouse::~AnimLighthouse() {}
 
-  const char *getName() override { return "Firefly"; }
+void AnimLighthouse::process(double dt) {
+  t += dt;
 
- private:
-  double t;
-  float *phases;
-  float *frequencies;
-  float *states;
-  double *t_next;
-};
+  for (int i = 0; i < pixbuf->getNumLeds(); i++) {
+    float r = sinf((2.0 * M_PI * LIGHTHOUSE_FREQ_R * t) + (2*M_PI/(i%11)));
+    float g = sinf((2.0 * M_PI * LIGHTHOUSE_FREQ_G * t) + (2*M_PI/(i%11)));
+    float b = sinf((2.0 * M_PI * LIGHTHOUSE_FREQ_B * t) + (2*M_PI/(i%11)));
+    pixbuf->set_pixel_rgb_blend(i, fmaxf(0.0f,r), fmaxf(0.0f,g), fmaxf(0.0f,b));
+  }
 
-#endif // _ANIM_FIREFLY_HPP_
+  ++step;
+}

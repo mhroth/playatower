@@ -26,6 +26,8 @@ class AnimPhasor: public Animation {
 
   void process(double dt) override;
 
+  const char *getName() override { return "Phasor"; }
+
  private:
   float t;
   float f_min, f_max;

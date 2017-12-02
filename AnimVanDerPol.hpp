@@ -27,10 +27,15 @@ class AnimVanDerPol: public Animation {
 
   void process(double dt) override;
 
+  const char *getName() override { return "Van der Pol"; }
+
  private:
   double x, y;
   double u;
   double t;
+  double min_x, max_x, min_y, max_y;
+
+  float *state_x, *state_y;
 };
 
 #endif // _ANIM_VANDERPOL_HPP_
