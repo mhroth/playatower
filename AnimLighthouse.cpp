@@ -16,9 +16,9 @@
 
 #include "AnimLighthouse.hpp"
 
-#define LIGHTHOUSE_FREQ_R 1.0/15.5
-#define LIGHTHOUSE_FREQ_G 1.0/15.0
-#define LIGHTHOUSE_FREQ_B 1.0/14.5
+#define LIGHTHOUSE_FREQ_R 1.0/300.0
+#define LIGHTHOUSE_FREQ_G 1.0/60.0
+#define LIGHTHOUSE_FREQ_B 1.0/10.0
 
 AnimLighthouse::AnimLighthouse(PixelBuffer *pixbuf) : Animation(pixbuf) {
   t = 0.0;
@@ -29,11 +29,14 @@ AnimLighthouse::~AnimLighthouse() {}
 void AnimLighthouse::process(double dt) {
   t += dt;
 
-  for (int i = 0; i < pixbuf->getNumLeds(); i++) {
-    float r = sinf((2.0 * M_PI * LIGHTHOUSE_FREQ_R * t) + (2*M_PI/(i%11)));
-    float g = sinf((2.0 * M_PI * LIGHTHOUSE_FREQ_G * t) + (2*M_PI/(i%11)));
-    float b = sinf((2.0 * M_PI * LIGHTHOUSE_FREQ_B * t) + (2*M_PI/(i%11)));
-    pixbuf->set_pixel_rgb_blend(i, fmaxf(0.0f,r), fmaxf(0.0f,g), fmaxf(0.0f,b));
+  const int N = pixbuf->getNumLeds();
+  for (int i = 0; i < N; i++) {
+    float r = sinf((2.0 * M_PI * LIGHTHOUSE_FREQ_R * t) + (2*M_PI/((i%11)+1)));
+    float g = sinf((2.0 * M_PI * LIGHTHOUSE_FREQ_G * t) + (2*M_PI/((i%11)+1)));
+    float b = sinf((2.0 * M_PI * LIGHTHOUSE_FREQ_B * t) + (2*M_PI/((i%11)+1)));
+    pixbuf->set_pixel_hsl_blend(i, 0.0f, 0.67f, fmaxf(0.0f,r));
+    pixbuf->set_pixel_hsl_blend(i, 60.0f, 0.67f, fmaxf(0.0f,g), 0.5f, PixelBuffer::BlendMode::ADD);
+    pixbuf->set_pixel_hsl_blend(i, 210.0f, 0.67f, fmaxf(0.0f,b), 0.333f, PixelBuffer::BlendMode::ADD);
   }
 
   ++step;

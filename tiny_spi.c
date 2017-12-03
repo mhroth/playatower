@@ -29,6 +29,7 @@
 
 int tspi_open(TinySpi *tspi, const char *path, uint32_t spi_speed) {
   assert(tspi != NULL);
+  assert(path != NULL);
 
   int fd = open(path, O_RDWR);
   assert(fd >= 0);
