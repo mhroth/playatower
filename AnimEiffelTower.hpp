@@ -14,15 +14,16 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _ANIM_LIGHTHOUSE_HPP_
-#define _ANIM_LIGHTHOUSE_HPP_
+#ifndef _ANIM_EIFFEL_TOWER_HPP_
+#define _ANIM_EIFFEL_TOWER_HPP_
 
-#import "Animation.hpp"
+#include "Animation.hpp"
+#include <random>
 
-class AnimLighthouse: public Animation {
+class AnimEiffelTower: public Animation {
  public:
-  AnimLighthouse(PixelBuffer *pixbuf);
-  ~AnimLighthouse();
+  AnimEiffelTower(PixelBuffer *pixbuf);
+  ~AnimEiffelTower();
 
   void process(double dt) override;
 
@@ -32,7 +33,13 @@ class AnimLighthouse: public Animation {
 
  private:
   double t;
-  float saturation;
+  float mean_flash_time;
+  float flash_decay_period;
+  float __shimmer_rate;
+  std::vector<float> __shimmer;
+  std::default_random_engine gen;
+  std::uniform_real_distribution<float> d_uniform;
+  std::normal_distribution<float> d_gauss;
 };
 
-#endif // _ANIM_LIGHTHOUSE_HPP_
+#endif // _ANIM_EIFEL_TOWER_HPP_

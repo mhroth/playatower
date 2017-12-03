@@ -96,6 +96,9 @@ class PixelBuffer {
   /** Clear the buffer, set all values to 0. */
   void clear();
 
+  /** Set all pixels to the given values. */
+  void fill_rgb(float r, float g, float b);
+
   /** Multiply all RGB elements by f. */
   void apply_gain(float f);
 

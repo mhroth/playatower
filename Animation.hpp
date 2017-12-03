@@ -36,7 +36,16 @@ class Animation {
 
   virtual void process(double dt) = 0;
 
+  /** Get the name of this animation. */
   virtual const char *getName() { return "animation"; }
+
+  /**
+   * Set a parameter for the animation.
+   *
+   * @param index  The parameter index [>= 0]
+   * @param value  The parameter value [0,1]
+   */
+  virtual void setParameter(int index, float value) {}
 
   /**
    * Returns the preferred frames per second of this animation.

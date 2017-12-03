@@ -14,12 +14,12 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef _TINY_SPI_H_
+#define _TINY_SPI_H_
+
 #if __cplusplus
 extern "C" {
 #endif
-
-#ifndef _TINY_SPI_H_
-#define _TINY_SPI_H_
 
 #include <stdint.h>
 
@@ -37,8 +37,8 @@ int tspi_close(TinySpi *tspi);
  */
 int tspi_write(TinySpi *tspi, int num_bytes, uint8_t *data);
 
-#endif // _TINY_SPI_H_
-
 #if __cplusplus
 }
 #endif
+
+#endif // _TINY_SPI_H_

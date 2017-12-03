@@ -42,6 +42,7 @@
 #include "AnimVanDerPol.hpp"
 #include "AnimAllWhite.hpp"
 #include "AnimLighthouse.hpp"
+#include "AnimEiffelTower.hpp"
 
 #define SEC_TO_NS 1000000000LL
 #define ONE_MHZ 1000000
@@ -199,6 +200,11 @@ int main(int narg, char **argc) {
           pixbuf->setGlobal((int32_t) tosc_getNextFloat(&osc));
         } else if (!strcmp(tosc_getAddress(&osc), "/nightshift")) {
           nightshift = tosc_getNextFloat(&osc); // update nightshift
+        } else if (!strncmp(tosc_getAddress(&osc), "/param/", 7)) {
+          // e.g. /param/0 0.5
+          int index = atoi(tosc_getAddress(&osc)+7); // parameter index >= 0
+          float value = tosc_getNextFloat(&osc); // parameter value [0,1]
+          anim->setParameter(index, value);
         }
       }
       hLp_consume(&pipe); // consume the message from the pipe
@@ -213,7 +219,7 @@ int main(int narg, char **argc) {
       pixbuf->clear(); // clear the pixel buffer
 
       // instantiate the next animation
-      anim_index = (anim_index+1) % 7;
+      anim_index = (anim_index+1) % 8;
       switch (anim_index) {
         default:
         case 0: anim = new AnimPhasor(pixbuf); break;
@@ -223,6 +229,7 @@ int main(int narg, char **argc) {
         case 4: anim = new AnimVanDerPol(pixbuf); break;
         case 5: anim = new AnimAllWhite(pixbuf); break;
         case 6: anim = new AnimLighthouse(pixbuf); break;
+        case 7: anim = new AnimEiffelTower(pixbuf); break;
       }
 
       // FPS = anim->getPreferredFps();

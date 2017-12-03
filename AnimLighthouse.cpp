@@ -22,9 +22,17 @@
 
 AnimLighthouse::AnimLighthouse(PixelBuffer *pixbuf) : Animation(pixbuf) {
   t = 0.0;
+  saturation = 0.67f;
 }
 
 AnimLighthouse::~AnimLighthouse() {}
+
+void AnimLighthouse::setParameter(int index, float value) {
+  switch (index) {
+    case 0: saturation = value; break;
+    default: break;
+  }
+}
 
 void AnimLighthouse::process(double dt) {
   t += dt;
@@ -34,9 +42,9 @@ void AnimLighthouse::process(double dt) {
     float r = sinf((2.0 * M_PI * LIGHTHOUSE_FREQ_R * t) + (2*M_PI/((i%11)+1)));
     float g = sinf((2.0 * M_PI * LIGHTHOUSE_FREQ_G * t) + (2*M_PI/((i%11)+1)));
     float b = sinf((2.0 * M_PI * LIGHTHOUSE_FREQ_B * t) + (2*M_PI/((i%11)+1)));
-    pixbuf->set_pixel_hsl_blend(i, 0.0f, 0.67f, fmaxf(0.0f,r));
-    pixbuf->set_pixel_hsl_blend(i, 60.0f, 0.67f, fmaxf(0.0f,g), 0.5f, PixelBuffer::BlendMode::ADD);
-    pixbuf->set_pixel_hsl_blend(i, 210.0f, 0.67f, fmaxf(0.0f,b), 0.333f, PixelBuffer::BlendMode::ADD);
+    pixbuf->set_pixel_hsl_blend(i, 0.0f, saturation, fmaxf(0.0f,r));
+    pixbuf->set_pixel_hsl_blend(i, 60.0f, saturation, fmaxf(0.0f,g), 0.5f, PixelBuffer::BlendMode::ADD);
+    pixbuf->set_pixel_hsl_blend(i, 210.0f, saturation, fmaxf(0.0f,b), 0.333f, PixelBuffer::BlendMode::ADD);
   }
 
   ++step;

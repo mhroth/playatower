@@ -83,6 +83,12 @@ void PixelBuffer::clear() {
   memset(rgb, 0, 3*numLeds*sizeof(float));
 }
 
+void PixelBuffer::fill_rgb(float r, float g, float b) {
+  for (int i = 0; i < numLeds; i++) {
+    set_pixel_rgb_blend(i, r, g, b);
+  }
+}
+
 void PixelBuffer::apply_gain(float f) {
   const float alpha = 1.0f - f;
   for (int i = 0; i < numLeds; ++i) {
