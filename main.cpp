@@ -252,9 +252,9 @@ int main(int narg, char **argc) {
     // track total elapsed time
     total_elapsed_ns += elapsed_ns;
 
-    // print info every second
+    // print info every half second
     if (total_elapsed_ns > next_print_ns) {
-      next_print_ns += SEC_TO_NS;
+      next_print_ns += SEC_TO_NS/2;
 
       const float amps = pixbuf->getAmperes();
       printf("\r| %6.1f fps | %7.3f Watts (%4.1f%%) [%4.1f Amps] | %9i frames | %2i global | %0.3f nightshift | %s",
