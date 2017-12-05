@@ -25,6 +25,8 @@ AnimLorenzOsc::AnimLorenzOsc(PixelBuffer *pixbuf) :
   rho = 28.0;
   beta = 8.0/3.0;
 
+  __rgb_sigma = 13.0f;
+
   // random starting position on unit sphere
   srand((unsigned)time(0));
   x = ((double) rand()) / ((double) RAND_MAX);
@@ -36,10 +38,25 @@ AnimLorenzOsc::AnimLorenzOsc(PixelBuffer *pixbuf) :
   min_x = INFINITY; max_x = -INFINITY;
   min_y = INFINITY; max_y = -INFINITY;
   min_z = INFINITY; max_z = -INFINITY;
+  max_dx = -INFINITY; max_dy = -INFINITY; max_dz = -INFINITY;
 }
 
 AnimLorenzOsc::~AnimLorenzOsc() {
   // nothing to do
+}
+
+void AnimLorenzOsc::setParameter(int index, float value) {
+  switch (index) {
+    case 0: __rgb_sigma = powf(10.0f, lin_scale(value, 0.0f, 1.0f, 0.0f, 2.0f)); break;
+    default: break;
+  }
+}
+
+float AnimLorenzOsc::getParameter(int index) {
+  switch(index) {
+    case 0: return __rgb_sigma;
+    default: return -1.0f;
+  }
 }
 
 void AnimLorenzOsc::process(double dt) {
@@ -55,18 +72,31 @@ void AnimLorenzOsc::process(double dt) {
   min_x = fmin(min_x, x); max_x = fmax(max_x, x);
   min_y = fmin(min_y, y); max_y = fmax(max_y, y);
   min_z = fmin(min_z, z); max_z = fmax(max_z, z);
+  max_dx = fmax(fabs(dx), max_dx);
+  max_dy = fmax(fabs(dx), max_dy);
+  max_dx = fmax(fabs(dz), max_dz);
 
-  // clear the pixel data
-  pixbuf->clear();
+  const int N = pixbuf->getNumLeds();
 
-  int i_r = (int) (((double) (pixbuf->getNumLeds()-1)) * ((x - min_x) / (max_x - min_x)));
-  pixbuf->set_pixel_rgb_blend(i_r, 1.0f, 0.0f, 0.0f);
+  int i_r = lin_scale(x, min_x, max_x, 0, N-1);
+  int i_g = lin_scale(x, min_y, max_y, 0, N-1);
+  int i_b = lin_scale(x, min_z, max_z, 0, N-1);
 
-  int i_g = (int) (((double) (pixbuf->getNumLeds()-1)) * ((y - min_y) / (max_y - min_y)));
-  pixbuf->set_pixel_rgb_blend(i_g, 0.0f, 1.0f, 0.0f);
+  float r_sigma = lin_scale(fabs(dx), 0.0f, max_dx, 0, 1);
+  float g_sigma = lin_scale(fabs(dy), 0.0f, max_dy, 0, 1);
+  float b_sigma = lin_scale(fabs(dz), 0.0f, max_dz, 0, 1);
 
-  int i_b = (int) (((double) (pixbuf->getNumLeds()-1)) * ((z - min_z) / (max_z - min_z)));
-  pixbuf->set_pixel_rgb_blend(i_b, 0.0f, 0.0f, 1.0f);
+  const float lightness_sigma_const = __rgb_sigma * M_SQRT_TAU * 0.67f;
+
+  for (int i = 0; i < N; ++i) {
+    float r = pdf_normal(i, i_r, __rgb_sigma) * lightness_sigma_const;
+    float g = pdf_normal(i, i_g, __rgb_sigma) * lightness_sigma_const;
+    float b = pdf_normal(i, i_b, __rgb_sigma) * lightness_sigma_const;
+
+    pixbuf->set_pixel_hsl_blend(i, 0.0f, r_sigma, r);
+    pixbuf->set_pixel_hsl_blend(i, 120.0f, g_sigma, g, 0.5f, PixelBuffer::BlendMode::ADD);
+    pixbuf->set_pixel_hsl_blend(i, 240.0f, b_sigma, b, 0.33f, PixelBuffer::BlendMode::ADD);
+  }
 
   ++step;
 }

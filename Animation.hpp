@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <random>
+
 #include "PixelBuffer.hpp"
 
 #define M_TAU 6.283185307179586f
@@ -46,6 +48,13 @@ class Animation {
    * @param value  The parameter value [0,1]
    */
   virtual void setParameter(int index, float value) {}
+
+  /**
+   * Get parameter for animation.
+   *
+   * @param index
+   */
+  virtual float getParameter(int index) { return -1.0f; }
 
   /**
    * Returns the preferred frames per second of this animation.

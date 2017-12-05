@@ -26,12 +26,18 @@ class AnimLorenzOsc: public Animation {
 
   void process(double dt) override;
 
+  void setParameter(int index, float value) override;
+
+  float getParameter(int index) override;
+
   const char *getName() override { return "Lorenz Oscillator"; }
 
  private:
   double x, y, z, dx, dy, dz;
   double beta, rho, sigma;
   double min_x, max_x, min_y, max_y, min_z, max_z;
+  double max_dx, max_dy, max_dz;
+  float __rgb_sigma;
 };
 
 #endif // _ANIM_LORENZ_OSC_HPP_

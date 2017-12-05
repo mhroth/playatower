@@ -26,7 +26,10 @@ class AnimLorenzOscFade: public Animation {
 
   void process(double dt) override;
 
-  const char *getName() override { return "Lorenz Oscillator with Fade"; }
+  void setParameter(int index, float value) override;
+  float getParameter(int index) override;
+
+  const char *getName() override { return "Lorenz Oscillator - Fade"; }
 
  private:
   double t; // total elapsed time
@@ -36,6 +39,7 @@ class AnimLorenzOscFade: public Animation {
   double max_dx, max_dy, max_dz;
   double max_speed;
   double c_h, c_s, c_l; // base HSL color
+  double alpha_mult;
 };
 
 #endif // _ANIM_LORENZ_OSC_FADE_HPP_

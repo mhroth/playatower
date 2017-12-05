@@ -16,9 +16,9 @@
 
 #include "AnimLighthouse.hpp"
 
-#define LIGHTHOUSE_FREQ_R 1.0/300.0
-#define LIGHTHOUSE_FREQ_G 1.0/60.0
-#define LIGHTHOUSE_FREQ_B 1.0/10.0
+#define LIGHTHOUSE_FREQ_R (1.0/300.0)
+#define LIGHTHOUSE_FREQ_G (-1.0/60.0)
+#define LIGHTHOUSE_FREQ_B (1.0/10.0)
 
 AnimLighthouse::AnimLighthouse(PixelBuffer *pixbuf) : Animation(pixbuf) {
   t = 0.0;

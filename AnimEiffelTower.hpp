@@ -18,7 +18,6 @@
 #define _ANIM_EIFFEL_TOWER_HPP_
 
 #include "Animation.hpp"
-#include <random>
 
 class AnimEiffelTower: public Animation {
  public:
@@ -29,7 +28,7 @@ class AnimEiffelTower: public Animation {
 
   void setParameter(int index, float value) override;
 
-  const char *getName() override { return "Lighthouse"; }
+  const char *getName() override { return "Eiffel Tower"; }
 
  private:
   double t;

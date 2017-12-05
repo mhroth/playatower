@@ -25,6 +25,7 @@ AnimLorenzOscFade::AnimLorenzOscFade(PixelBuffer *pixbuf) :
     Animation(pixbuf) {
 
   t = 0.0;
+  alpha_mult = 200.0;
 
   sigma = 10.0;
   rho = 28.0;
@@ -52,6 +53,20 @@ AnimLorenzOscFade::AnimLorenzOscFade(PixelBuffer *pixbuf) :
 
 AnimLorenzOscFade::~AnimLorenzOscFade() {
   // nothing to do
+}
+
+void AnimLorenzOscFade::setParameter(int index, float value) {
+  switch (index) {
+    case 0: alpha_mult = 300.0*value; break;
+    default: break;
+  }
+}
+
+float AnimLorenzOscFade::getParameter(int index) {
+  switch (index) {
+    case 0: return alpha_mult;
+    default: return -1.0f;
+  }
 }
 
 void AnimLorenzOscFade::process(double dt) {
@@ -100,15 +115,15 @@ void AnimLorenzOscFade::process(double dt) {
 
   int i_r = lin_scale(x, min_x, max_x, 0, N-1);
   double l_x = lin_scale(fabs(dx), 0.0, max_dx, 0.05, c_l);
-  pixbuf->set_pixel_hsl_blend(i_r, c_h, c_s, l_x, 30.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
+  pixbuf->set_pixel_hsl_blend(i_r, c_h, c_s, l_x, alpha_mult*dt, PixelBuffer::BlendMode::ACCUMULATE);
 
   int i_g = lin_scale(y, min_y, max_y, 0, N-1);
   double l_y = lin_scale(fabs(dy), 0.0, max_dy, 0.05, c_l);
-  pixbuf->set_pixel_hsl_blend(i_g, c_h+a, c_s, l_y, 30.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
+  pixbuf->set_pixel_hsl_blend(i_g, c_h+a, c_s, l_y, alpha_mult*dt, PixelBuffer::BlendMode::ACCUMULATE);
 
   int i_b = lin_scale(z, min_z, max_z, 0, N-1);
   double l_z = lin_scale(fabs(dz), 0.0, max_dz, 0.05, c_l);
-  pixbuf->set_pixel_hsl_blend(i_b, c_h-a, c_s, l_z, 30.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
+  pixbuf->set_pixel_hsl_blend(i_b, c_h-a, c_s, l_z, alpha_mult*dt, PixelBuffer::BlendMode::ACCUMULATE);
 
   ++step;
 }

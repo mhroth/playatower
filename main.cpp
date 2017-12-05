@@ -45,7 +45,7 @@
 #include "AnimEiffelTower.hpp"
 
 #define SEC_TO_NS 1000000000LL
-#define ONE_MHZ 1000000
+#define SPI_HZ 2*1000000
 #define GPIO_INPUT_PIN 2
 
 
@@ -146,7 +146,7 @@ int main(int narg, char **argc) {
   printf("\n");
 
   // open the SPI interface
-  tspi_open(&tspi, "/dev/spidev0.0", ONE_MHZ);
+  tspi_open(&tspi, "/dev/spidev0.0", SPI_HZ);
 
   // open the GPIO interface
   gpio_open();
@@ -264,9 +264,9 @@ int main(int narg, char **argc) {
       next_print_ns += SEC_TO_NS/2;
 
       const float amps = pixbuf->getAmperes();
-      printf("\r| %6.1f fps | %7.3f Watts (%4.1f%%) [%4.1f Amps] | %9i frames | %2i global | %0.3f nightshift | %s",
+      printf("\r| %6.1f fps | %7.3f Watts (%4.1f%%) [%4.1f Amps] | %9i frames | %2i global | %0.3f nightshift | %.32s | [%g]",
           1.0/dt, 5.0f*amps, 100.0f*5.0f*amps/pixbuf->getMaxWatts(), amps,
-          global_step, pixbuf->getGlobal(), nightshift, anim->getName());
+          global_step, pixbuf->getGlobal(), nightshift, anim->getName(), anim->getParameter(0));
       fflush(stdout);
     }
 
