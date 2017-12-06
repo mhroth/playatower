@@ -90,9 +90,9 @@ void PixelBuffer::fill_rgb(float r, float g, float b) {
 }
 
 void PixelBuffer::apply_gain(float f) {
-  const float alpha = 1.0f - f;
-  for (int i = 0; i < numLeds; ++i) {
-    set_pixel_rgb_blend(i, 0.0f, 0.0f, 0.0f, alpha, BlendMode::ADD);
+  const int n = numLeds * 3;
+  for (int i = 0; i < n; ++i) {
+    rgb[i] *= f;
   }
 }
 

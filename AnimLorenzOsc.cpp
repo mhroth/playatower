@@ -79,8 +79,8 @@ void AnimLorenzOsc::process(double dt) {
   const int N = pixbuf->getNumLeds();
 
   int i_r = lin_scale(x, min_x, max_x, 0, N-1);
-  int i_g = lin_scale(x, min_y, max_y, 0, N-1);
-  int i_b = lin_scale(x, min_z, max_z, 0, N-1);
+  int i_g = lin_scale(y, min_y, max_y, 0, N-1);
+  int i_b = lin_scale(z, min_z, max_z, 0, N-1);
 
   float r_sigma = lin_scale(fabs(dx), 0.0f, max_dx, 0, 1);
   float g_sigma = lin_scale(fabs(dy), 0.0f, max_dy, 0, 1);

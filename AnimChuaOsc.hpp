@@ -26,13 +26,20 @@ class AnimChuaOsc: public Animation {
 
   void process(double dt) override;
 
+  void setParameter(int index, float value) override;
+
   const char *getName() override { return "Chua Oscillator"; }
 
  private:
   double t; // total elapsed time
-  double x, y, z, dx, dy, dz;
+  double x, y, z;
   double min_x, max_x, min_y, max_y, min_z, max_z;
-  double min_dx, max_dx, min_dy, max_dy, min_dz, max_dz;
+  double __dx_range, __dy_range, __dz_range;
+  std::default_random_engine __gen;
+  std::exponential_distribution<float> __d_exp;
+  std::uniform_real_distribution<float> __d_uniform;
+  float __t_next_color_change;
+  float __base_hue;
 };
 
 #endif // _ANIM_CHUA_OSC_HPP_

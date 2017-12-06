@@ -26,6 +26,14 @@ AnimChuaOsc::AnimChuaOsc(PixelBuffer *pixbuf) :
 
   t = 0.0;
 
+  // inti base hue
+  __d_uniform = std::uniform_real_distribution<float>(0.0f, 360.0f);
+  __base_hue = __d_uniform(__gen);
+
+  // init next color change
+  __d_exp = std::exponential_distribution<float>(1.0f/60.0f); // 60 seconds
+  __t_next_color_change = __d_exp(__gen);
+
   // random starting position on unit sphere
   srand((unsigned)time(0));
   x = ((double) rand()) / ((double) RAND_MAX);
@@ -38,17 +46,27 @@ AnimChuaOsc::AnimChuaOsc(PixelBuffer *pixbuf) :
   min_x = INFINITY; max_x = -INFINITY;
   min_y = INFINITY; max_y = -INFINITY;
   min_z = INFINITY; max_z = -INFINITY;
-  min_dx = INFINITY; max_dx = -INFINITY;
-  min_dy = INFINITY; max_dy = -INFINITY;
-  min_dz = INFINITY; max_dz = -INFINITY;
+  __dx_range = -INFINITY; __dy_range = -INFINITY; __dz_range = -INFINITY;
 }
 
 AnimChuaOsc::~AnimChuaOsc() {
   // nothing to do
 }
 
+void AnimChuaOsc::setParameter(int index, float value) {
+  switch (index) {
+    case 0: __t_next_color_change = t; break; // change color immediately
+    default: break;
+  }
+}
+
 void AnimChuaOsc::process(double dt) {
   t += dt;
+
+  if (__t_next_color_change <= t) {
+    __t_next_color_change = t + __d_exp(__gen);
+    __base_hue = __d_uniform(__gen);
+  }
 
   // https://en.wikipedia.org/wiki/Multiscroll_attractor
   const double a = 36.0;
@@ -58,9 +76,9 @@ void AnimChuaOsc::process(double dt) {
   double osc0 = sin(2.0 * M_PI * (1.0/(30*60.0)) * t); // 30 minutes
   double u = lin_scale(osc0, -1.0, 1.0, -15.0, 15.0);
 
-  dx = a * (y - x);
-  dy = x - x*z + c*y + u;
-  dz = x*y - b*z;
+  double dx = a * (y - x);
+  double dy = x - x*z + c*y + u;
+  double dz = x*y - b*z;
 
   x += dx * dt;
   y += dy * dt;
@@ -70,9 +88,10 @@ void AnimChuaOsc::process(double dt) {
   min_x = fmin(min_x*k1_decay, x); max_x = fmax(max_x*k1_decay, x);
   min_y = fmin(min_y*k1_decay, y); max_y = fmax(max_y*k1_decay, y);
   min_z = fmin(min_z*k1_decay, z); max_z = fmax(max_z*k1_decay, z);
-  min_dx = fmin(min_dx*k1_decay, dx); max_dx = fmax(max_dx*k1_decay, dx);
-  min_dy = fmin(min_dy*k1_decay, dy); max_dy = fmax(max_dy*k1_decay, dy);
-  min_dz = fmin(min_dz*k1_decay, dz); max_dz = fmax(max_dz*k1_decay, dz);
+
+  __dx_range = fmax(k1_decay*__dx_range, fabs(dx));
+  __dy_range = fmax(k1_decay*__dy_range, fabs(dy));
+  __dz_range = fmax(k1_decay*__dz_range, fabs(dz));
 
   const float k_decay = expf(-((float) dt)/1.0f);
   pixbuf->apply_gain(k_decay);
@@ -80,16 +99,16 @@ void AnimChuaOsc::process(double dt) {
   const int N = pixbuf->getNumLeds();
 
   int i_r = lin_scale(x, min_x, max_x, 0, N-1);
-  double l_x = lin_scale(fabs(dx), 0.0, fmax(fabs(min_dx), fabs(max_dx)), 0.01, 0.55+0.1);
-  pixbuf->set_pixel_hsl_blend(i_r, 35.0f, 0.69f, l_x, 200.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
+  double l_x = lin_scale(fabs(dx), 0.0, __dx_range, 0.01, 0.55+0.1);
+  pixbuf->set_pixel_hsl_blend(i_r, __base_hue, 0.69f, l_x, 200.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
 
   int i_g = lin_scale(y, min_y, max_y, 0, N-1);
-  double l_y = lin_scale(fabs(dy), 0.0, fmax(fabs(min_dy), fabs(max_dy)), 0.01, 0.48+0.1);
-  pixbuf->set_pixel_hsl_blend(i_g, 96.0f, 0.36f, l_y, 200.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
+  double l_y = lin_scale(fabs(dy), 0.0, __dy_range, 0.01, 0.48+0.1);
+  pixbuf->set_pixel_hsl_blend(i_g, __base_hue+30.0f, 0.36f, l_y, 200.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
 
   int i_b = lin_scale(z, min_z, max_z, 0, N-1);
-  double l_z = lin_scale(fabs(dz), 0.0, fmax(fabs(min_dz), fabs(max_dz)), 0.01, 0.48+0.1);
-  pixbuf->set_pixel_hsl_blend(i_b, 210.0f, 0.9f, l_z, 200.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
+  double l_z = lin_scale(fabs(dz), 0.0, __dz_range, 0.01, 0.48+0.1);
+  pixbuf->set_pixel_hsl_blend(i_b, __base_hue-30.0f, 0.9f, l_z, 200.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
 
   ++step;
 }
