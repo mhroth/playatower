@@ -16,24 +16,58 @@
 
 #import "AnimPhasor.hpp"
 
-AnimPhasor::AnimPhasor(PixelBuffer *pixbuf) :
-    Animation(pixbuf) {
+AnimPhasor::AnimPhasor(PixelBuffer *pixbuf) : Animation(pixbuf) {
   t = 0.0f;
-  f_min = 1/120.0f;
-  f_max = 0.5f;
+  f_min = 1.0f/120.0f; // 1/2min
+  __f_target = 1.0f/2.0f;
+  __f_prev_target = __f_target;
+  __t_o = 0.0f;
+
+  __d_uniform = std::uniform_real_distribution<float>(0.0f, 1.0f);
+  __d_exp = std::exponential_distribution<float>(1.0f/(5.0f*60.0f)); // 5 minutes
+  __t_c = __d_exp(__gen); // schedule next change
 }
 
-AnimPhasor::~AnimPhasor() {
-  // nothing to do
+AnimPhasor::~AnimPhasor() {}
+
+void AnimPhasor::updateTarget(float value) {
+  __f_prev_target = lin_scale(1.0f/(1.0f+expf(-(t-__t_o-6.0f))),
+      0, 1, __f_prev_target, __f_target);
+
+  __t_o = t;
+  __f_target = lin_scale(value, 0, 1, f_min, 2);
+}
+
+void AnimPhasor::setParameter(int index, float value) {
+  switch (index) {
+    case 0: updateTarget(value); break;
+    default: break;
+  }
+}
+
+float AnimPhasor::getParameter(int index) {
+  switch (index) {
+    case 0: return __f_target;
+    default: return -1.0f;
+  }
 }
 
 void AnimPhasor::process(double dt) {
   t += (float) dt;
 
+  if (__t_c <= t) {
+    updateTarget(__d_uniform(__gen));
+    __t_c = t + __d_exp(__gen);
+  }
+
+  float x = 1.0f/(1.0f+expf(-(t-__t_o-6.0f))); // [0,1]
+  float f_z = lin_scale(1.0f/(1.0f+expf(-(t-__t_o-6.0f))),
+      0, 1, __f_prev_target, __f_target);
+
   const int N = pixbuf->getNumLeds();
   const float n = (float) N;
   for (int i = 0; i < N; ++i) {
-    float f = ((f_max-f_min)*i/n) + f_min;
+    float f = lin_scale(i, 0, n, f_min, f_z);
     float y = fabsf(sinf(2.0f * M_PI * f * t));
     if (y < 0.5f) {
       pixbuf->set_pixel_rgb_blend(i, 0.0f*y/255.0f, 191.0f*y/255.0f, 255.0f*y/255.0f);
