@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <chrono>
 #include <random>
 
 #include "PixelBuffer.hpp"

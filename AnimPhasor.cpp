@@ -23,6 +23,7 @@ AnimPhasor::AnimPhasor(PixelBuffer *pixbuf) : Animation(pixbuf) {
   __f_prev_target = __f_target;
   __t_o = 0.0f;
 
+  __gen = std::default_random_engine(std::chrono::system_clock::now().time_since_epoch().count());
   __d_uniform = std::uniform_real_distribution<float>(0.0f, 1.0f);
   __d_exp = std::exponential_distribution<float>(1.0f/(5.0f*60.0f)); // 5 minutes
   __t_c = 30.0f; // first change happens after 30 seconds

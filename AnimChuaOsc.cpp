@@ -26,7 +26,9 @@ AnimChuaOsc::AnimChuaOsc(PixelBuffer *pixbuf) :
 
   t = 0.0;
 
-  // inti base hue
+  __gen = std::default_random_engine(std::chrono::system_clock::now().time_since_epoch().count());
+
+  // init base hue
   __d_uniform = std::uniform_real_distribution<float>(0.0f, 360.0f);
   __base_hue = __d_uniform(__gen);
 

@@ -25,8 +25,9 @@ AnimEiffelTower::AnimEiffelTower(PixelBuffer *pixbuf) : Animation(pixbuf) {
   t = 0.0;
   mean_flash_time = 10.0f; // seconds
   flash_decay_period = 0.1f; // seconds
-  __shimmer_rate = 0.5f;
+  __shimmer_rate = 0.3f;
   __shimmer.resize(pixbuf->getNumLeds(), 1.0f);
+  gen = std::default_random_engine(std::chrono::system_clock::now().time_since_epoch().count());
   d_uniform = std::uniform_real_distribution<float>(0.0f, 1.0f);
   d_gauss = std::normal_distribution<float>(1.0f, 0.2f);
 
