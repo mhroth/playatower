@@ -43,6 +43,7 @@
 #include "AnimAllWhite.hpp"
 #include "AnimLighthouse.hpp"
 #include "AnimEiffelTower.hpp"
+#include "AnimXmasPhasor.hpp"
 
 #define SEC_TO_NS 1000000000LL
 #define SPI_HZ 2*1000000
@@ -122,8 +123,9 @@ int main(int narg, char **argc) {
   uint64_t total_elapsed_ns = 0;
   uint64_t next_print_ns = 0;
 
-  // register the SIGINT handler
-  signal(SIGINT, &sigintHandler);
+  // register signal handlers
+  signal(SIGINT, &sigintHandler); // SIGINT (Crtl+C)
+  signal(SIGTERM, &sigintHandler); // SIGTERM (kill pid)
   printf("Press Ctrl+C to quit.\n");
 
   const int NUM_LEDS = (narg > 1) ? atoi(argc[1]) : 0;
@@ -219,17 +221,18 @@ int main(int narg, char **argc) {
       pixbuf->clear(); // clear the pixel buffer
 
       // instantiate the next animation
-      anim_index = (anim_index+1) % 8;
+      anim_index = (anim_index+1) % 7;
       switch (anim_index) {
         default:
         case 0: anim = new AnimPhasor(pixbuf); break;
-        case 1: anim = new AnimLorenzOsc(pixbuf); break;
-        case 2: anim = new AnimLorenzOscFade(pixbuf); break;
-        case 3: anim = new AnimChuaOsc(pixbuf); break;
-        case 4: anim = new AnimVanDerPol(pixbuf); break;
-        case 5: anim = new AnimAllWhite(pixbuf); break;
-        case 6: anim = new AnimLighthouse(pixbuf); break;
-        case 7: anim = new AnimEiffelTower(pixbuf); break;
+        case 1: anim = new AnimXmasPhasor(pixbuf); break;
+        case 2: anim = new AnimLorenzOsc(pixbuf); break;
+        case 3: anim = new AnimLorenzOscFade(pixbuf); break;
+        case 4: anim = new AnimChuaOsc(pixbuf); break;
+        case 5: anim = new AnimLighthouse(pixbuf); break;
+        case 6: anim = new AnimEiffelTower(pixbuf); break;
+        // case 4: anim = new AnimVanDerPol(pixbuf); break;
+        // case 5: anim = new AnimAllWhite(pixbuf); break;
       }
 
       // FPS = anim->getPreferredFps();

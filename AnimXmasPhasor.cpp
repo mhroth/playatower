@@ -14,9 +14,9 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#import "AnimPhasor.hpp"
+#import "AnimXmasPhasor.hpp"
 
-AnimPhasor::AnimPhasor(PixelBuffer *pixbuf) : Animation(pixbuf) {
+AnimXmasPhasor::AnimXmasPhasor(PixelBuffer *pixbuf) : Animation(pixbuf) {
   t = 0.0f;
   f_min = 1.0f/120.0f; // 1/2min
   __f_target = 1.0f/2.0f;
@@ -28,9 +28,9 @@ AnimPhasor::AnimPhasor(PixelBuffer *pixbuf) : Animation(pixbuf) {
   __t_c = 30.0f; // first change happens after 30 seconds
 }
 
-AnimPhasor::~AnimPhasor() {}
+AnimXmasPhasor::~AnimXmasPhasor() {}
 
-void AnimPhasor::updateTarget(float value) {
+void AnimXmasPhasor::updateTarget(float value) {
   __f_prev_target = lin_scale(1.0f/(1.0f+expf(-(t-__t_o-6.0f))),
       0, 1, __f_prev_target, __f_target);
 
@@ -38,21 +38,21 @@ void AnimPhasor::updateTarget(float value) {
   __f_target = log_scale(value, log10f(f_min), log10f(2.0f));
 }
 
-void AnimPhasor::setParameter(int index, float value) {
+void AnimXmasPhasor::setParameter(int index, float value) {
   switch (index) {
     case 0: updateTarget(value); break;
     default: break;
   }
 }
 
-float AnimPhasor::getParameter(int index) {
+float AnimXmasPhasor::getParameter(int index) {
   switch (index) {
     case 0: return __f_target;
     default: return -1.0f;
   }
 }
 
-void AnimPhasor::process(double dt) {
+void AnimXmasPhasor::process(double dt) {
   t += (float) dt;
 
   if (__t_c <= t) {
@@ -70,9 +70,9 @@ void AnimPhasor::process(double dt) {
     float f = lin_scale(i, 0, n, f_min, f_z);
     float y = fabsf(sinf(2.0f * M_PI * f * t));
     if (y < 0.5f) {
-      pixbuf->set_pixel_rgb_blend(i, 0.0f*y/255.0f, 191.0f*y/255.0f, 255.0f*y/255.0f);
+      pixbuf->set_pixel_rgb_blend(i, 0.0f*y/255.0f, 255.0f*y/255.0f, 0.0f*y/255.0f);
     } else {
-      pixbuf->set_pixel_rgb_blend(i, y*153.0f/255.0f, y*50.0f/255.0f, y*204.0f/255.0f);
+      pixbuf->set_pixel_rgb_blend(i, y*255.0f/255.0f, y*0.0f/255.0f, y*0.0f/255.0f);
     }
   }
 

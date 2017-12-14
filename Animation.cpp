@@ -25,6 +25,11 @@ double Animation::lin_scale(double x, double min_in, double max_in, double min_o
   return ((x-min_in)/(max_in-min_in))*(max_out-min_out) + min_out;
 }
 
+float Animation::log_scale(float x, float min_log, float max_log) {
+  assert(x >= 0.0f && x <= 1.0f); // [0,1]
+  return powf(10.0f, x*(max_log-min_log) + min_log);
+}
+
 float Animation::pdf_normal(float x, float mu, float sigma) {
   assert(sigma >= 0.0f);
   const float a = (x - mu) / sigma;

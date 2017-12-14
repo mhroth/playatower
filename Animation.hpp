@@ -68,6 +68,15 @@ class Animation {
   double lin_scale(double x, double min_in, double max_in, double min_out, double max_out);
 
   /**
+   * Scales an input on range [0,1] logarithmicly between two values.
+   *
+   * @param x  Input in range [0,1]
+   * @param min_log  log10 of minimum value
+   * @param max_log  log10 of maximum value
+   */
+  float log_scale(float x, float min_log, float max_log);
+
+  /**
    * Gaussian distribution.
    * https://en.wikipedia.org/wiki/Normal_distribution
    *
