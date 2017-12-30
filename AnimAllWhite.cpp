@@ -20,9 +20,8 @@ AnimAllWhite::AnimAllWhite(PixelBuffer *pixbuf) : Animation(pixbuf) {}
 
 AnimAllWhite::~AnimAllWhite() {}
 
-void AnimAllWhite::process(double dt) {
-  for (int i = 0; i < pixbuf->getNumLeds(); i++) {
-    pixbuf->set_pixel_rgb_blend(i, 1.0f, 1.0f, 1.0f);
+void AnimAllWhite::_process(double dt) {
+  for (int i = 0; i < _pixbuf->getNumLeds(); i++) {
+    _pixbuf->set_pixel_rgb_blend(i, 1.0f, 1.0f, 1.0f);
   }
-  ++step;
 }

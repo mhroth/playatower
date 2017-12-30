@@ -59,7 +59,7 @@ float AnimLorenzOsc::getParameter(int index) {
   }
 }
 
-void AnimLorenzOsc::process(double dt) {
+void AnimLorenzOsc::_process(double dt) {
   // https://en.wikipedia.org/wiki/Lorenz_system
   dx = sigma * (y - x);
   dy = (x * (rho - z)) - y;
@@ -76,7 +76,7 @@ void AnimLorenzOsc::process(double dt) {
   max_dy = fmax(fabs(dx), max_dy);
   max_dx = fmax(fabs(dz), max_dz);
 
-  const int N = pixbuf->getNumLeds();
+  const int N = _pixbuf->getNumLeds();
 
   int i_r = lin_scale(x, min_x, max_x, 0, N-1);
   int i_g = lin_scale(y, min_y, max_y, 0, N-1);
@@ -93,10 +93,8 @@ void AnimLorenzOsc::process(double dt) {
     float g = pdf_normal(i, i_g, __rgb_sigma) * lightness_sigma_const;
     float b = pdf_normal(i, i_b, __rgb_sigma) * lightness_sigma_const;
 
-    pixbuf->set_pixel_hsl_blend(i, 0.0f, r_sigma, r);
-    pixbuf->set_pixel_hsl_blend(i, 120.0f, g_sigma, g, 0.5f, PixelBuffer::BlendMode::ADD);
-    pixbuf->set_pixel_hsl_blend(i, 240.0f, b_sigma, b, 0.33f, PixelBuffer::BlendMode::ADD);
+    _pixbuf->set_pixel_hsl_blend(i, 0.0f, r_sigma, r);
+    _pixbuf->set_pixel_hsl_blend(i, 120.0f, g_sigma, g, 0.5f, PixelBuffer::BlendMode::ADD);
+    _pixbuf->set_pixel_hsl_blend(i, 240.0f, b_sigma, b, 0.33f, PixelBuffer::BlendMode::ADD);
   }
-
-  ++step;
 }

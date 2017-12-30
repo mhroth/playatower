@@ -21,10 +21,9 @@
 
 #import "AnimLorenzOscFade.hpp"
 
-AnimLorenzOscFade::AnimLorenzOscFade(PixelBuffer *pixbuf) :
-    Animation(pixbuf) {
+AnimLorenzOscFade::AnimLorenzOscFade(PixelBuffer *_pixbuf) :
+    Animation(_pixbuf) {
 
-  t = 0.0;
   alpha_mult = 200.0;
 
   sigma = 10.0;
@@ -69,12 +68,10 @@ float AnimLorenzOscFade::getParameter(int index) {
   }
 }
 
-void AnimLorenzOscFade::process(double dt) {
-  t += dt;
-
-  double osc0 = sin(2.0 * M_PI * (1.0/(10*60.0)) * t); // 10 minutes
-  double osc1 = sin(2.0 * M_PI * (1.0/(2.5*60.0)) * t); // 2.5 minutes
-  double osc2 = sin(2.0 * M_PI * (1.0/(14*60.0)) * t); // 14 minutes
+void AnimLorenzOscFade::_process(double dt) {
+  double osc0 = sin(2.0 * M_PI * (1.0/(10*60.0)) * _t); // 10 minutes
+  double osc1 = sin(2.0 * M_PI * (1.0/(2.5*60.0)) * _t); // 2.5 minutes
+  double osc2 = sin(2.0 * M_PI * (1.0/(14*60.0)) * _t); // 14 minutes
   sigma = lin_scale(osc0, -1.0, 1.0, 5.0, 15.0);
   rho = lin_scale(osc1, -1.0, 1.0, 24.0, 36.0);
   beta = lin_scale(osc2, -1.0, 1.0, 2.0, 3.33);
@@ -103,11 +100,11 @@ void AnimLorenzOscFade::process(double dt) {
   max_speed = fmax(max_speed, speed);
 
   const float k_decay = expf(-((float) dt)/1.0f);
-  pixbuf->apply_gain(k_decay);
+  _pixbuf->apply_gain(k_decay);
 
-  const int N = pixbuf->getNumLeds();
+  const int N = _pixbuf->getNumLeds();
 
-  double osc4 = sin(2.0 * M_PI * (1.0/(30*60.0)) * t); // 30 minutes
+  double osc4 = sin(2.0 * M_PI * (1.0/(30*60.0)) * _t); // 30 minutes
   c_h = lin_scale(osc4, -1.0, 1.0, 0.0, 360.0);
   // double a = lin_scale(speed, 0.0, max_speed, 0.0, 1.0);
   double a = speed/max_speed;
@@ -115,15 +112,13 @@ void AnimLorenzOscFade::process(double dt) {
 
   int i_r = lin_scale(x, min_x, max_x, 0, N-1);
   double l_x = lin_scale(fabs(dx), 0.0, max_dx, 0.05, c_l);
-  pixbuf->set_pixel_hsl_blend(i_r, c_h, c_s, l_x, alpha_mult*dt, PixelBuffer::BlendMode::ACCUMULATE);
+  _pixbuf->set_pixel_hsl_blend(i_r, c_h, c_s, l_x, alpha_mult*dt, PixelBuffer::BlendMode::ACCUMULATE);
 
   int i_g = lin_scale(y, min_y, max_y, 0, N-1);
   double l_y = lin_scale(fabs(dy), 0.0, max_dy, 0.05, c_l);
-  pixbuf->set_pixel_hsl_blend(i_g, c_h+a, c_s, l_y, alpha_mult*dt, PixelBuffer::BlendMode::ACCUMULATE);
+  _pixbuf->set_pixel_hsl_blend(i_g, c_h+a, c_s, l_y, alpha_mult*dt, PixelBuffer::BlendMode::ACCUMULATE);
 
   int i_b = lin_scale(z, min_z, max_z, 0, N-1);
   double l_z = lin_scale(fabs(dz), 0.0, max_dz, 0.05, c_l);
-  pixbuf->set_pixel_hsl_blend(i_b, c_h-a, c_s, l_z, alpha_mult*dt, PixelBuffer::BlendMode::ACCUMULATE);
-
-  ++step;
+  _pixbuf->set_pixel_hsl_blend(i_b, c_h-a, c_s, l_z, alpha_mult*dt, PixelBuffer::BlendMode::ACCUMULATE);
 }

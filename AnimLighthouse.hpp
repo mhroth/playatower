@@ -24,15 +24,14 @@ class AnimLighthouse: public Animation {
   AnimLighthouse(PixelBuffer *pixbuf);
   ~AnimLighthouse();
 
-  void process(double dt) override;
-
   void setParameter(int index, float value) override;
 
   const char *getName() override { return "Lighthouse"; }
 
  private:
-  double t;
-  float saturation;
+  void _process(double dt) override;
+
+  float __saturation;
 };
 
 #endif // _ANIM_LIGHTHOUSE_HPP_

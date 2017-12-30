@@ -14,26 +14,26 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _ANIM_FIREFLY_HPP_
-#define _ANIM_FIREFLY_HPP_
+#ifndef _ANIM_RANDOM_FLOW_HPP_
+#define _ANIM_RANDOM_FLOW_HPP_
 
 #import "Animation.hpp"
 
-class AnimFirefly: public Animation {
+class AnimRandomFlow: public Animation {
  public:
-  AnimFirefly(PixelBuffer *pixbuf);
-  ~AnimFirefly();
+  AnimRandomFlow(PixelBuffer *pixbuf);
+  ~AnimRandomFlow();
 
-  void process(double dt) override;
-
-  const char *getName() override { return "Firefly"; }
+  const char *getName() override { return "Random Flow"; }
 
  private:
-  double t;
-  float *phases;
-  float *frequencies;
-  float *states;
-  double *t_next;
+  void _process(double dt) override;
+
+  void __normalise(float *b, int n);
+
+  std::vector<float> __state;
+  std::vector<float> __kernel;
+  std::uniform_real_distribution<float> __d_uniform;
 };
 
-#endif // _ANIM_FIREFLY_HPP_
+#endif // _ANIM_RANDOM_FLOW_HPP_

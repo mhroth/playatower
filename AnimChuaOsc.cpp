@@ -21,20 +21,16 @@
 
 #import "AnimChuaOsc.hpp"
 
-AnimChuaOsc::AnimChuaOsc(PixelBuffer *pixbuf) :
-    Animation(pixbuf) {
-
-  t = 0.0;
-
-  __gen = std::default_random_engine(std::chrono::system_clock::now().time_since_epoch().count());
+AnimChuaOsc::AnimChuaOsc(PixelBuffer *_pixbuf) :
+    Animation(_pixbuf) {
 
   // init base hue
   __d_uniform = std::uniform_real_distribution<float>(0.0f, 360.0f);
-  __base_hue = __d_uniform(__gen);
+  __base_hue = __d_uniform(_gen);
 
   // init next color change
   __d_exp = std::exponential_distribution<float>(1.0f/60.0f); // 60 seconds
-  __t_next_color_change = __d_exp(__gen);
+  __t_next_color_change = __d_exp(_gen);
 
   // random starting position on unit sphere
   srand((unsigned)time(0));
@@ -57,17 +53,15 @@ AnimChuaOsc::~AnimChuaOsc() {
 
 void AnimChuaOsc::setParameter(int index, float value) {
   switch (index) {
-    case 0: __t_next_color_change = t; break; // change color immediately
+    case 0: __t_next_color_change = _t; break; // change color immediately
     default: break;
   }
 }
 
-void AnimChuaOsc::process(double dt) {
-  t += dt;
-
-  if (__t_next_color_change <= t) {
-    __t_next_color_change = t + __d_exp(__gen);
-    __base_hue = __d_uniform(__gen);
+void AnimChuaOsc::_process(double dt) {
+  if (__t_next_color_change <= _t) {
+    __t_next_color_change = _t + __d_exp(_gen);
+    __base_hue = __d_uniform(_gen);
   }
 
   // https://en.wikipedia.org/wiki/Multiscroll_attractor
@@ -75,7 +69,7 @@ void AnimChuaOsc::process(double dt) {
   const double b = 3.0;
   const double c = 20.0;
 
-  double osc0 = sin(2.0 * M_PI * (1.0/(30*60.0)) * t); // 30 minutes
+  double osc0 = sin(2.0 * M_PI * (1.0/(30*60.0)) * _t); // 30 minutes
   double u = lin_scale(osc0, -1.0, 1.0, -15.0, 15.0);
 
   double dx = a * (y - x);
@@ -96,21 +90,19 @@ void AnimChuaOsc::process(double dt) {
   __dz_range = fmax(k1_decay*__dz_range, fabs(dz));
 
   const float k_decay = expf(-((float) dt)/1.0f);
-  pixbuf->apply_gain(k_decay);
+  _pixbuf->apply_gain(k_decay);
 
-  const int N = pixbuf->getNumLeds();
+  const int N = _pixbuf->getNumLeds();
 
   int i_r = lin_scale(x, min_x, max_x, 0, N-1);
   double l_x = lin_scale(fabs(dx), 0.0, __dx_range, 0.01, 0.55+0.1);
-  pixbuf->set_pixel_hsl_blend(i_r, __base_hue, 0.69f, l_x, 200.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
+  _pixbuf->set_pixel_hsl_blend(i_r, __base_hue, 0.69f, l_x, 200.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
 
   int i_g = lin_scale(y, min_y, max_y, 0, N-1);
   double l_y = lin_scale(fabs(dy), 0.0, __dy_range, 0.01, 0.48+0.1);
-  pixbuf->set_pixel_hsl_blend(i_g, __base_hue+30.0f, 0.36f, l_y, 200.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
+  _pixbuf->set_pixel_hsl_blend(i_g, __base_hue+30.0f, 0.36f, l_y, 200.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
 
   int i_b = lin_scale(z, min_z, max_z, 0, N-1);
   double l_z = lin_scale(fabs(dz), 0.0, __dz_range, 0.01, 0.48+0.1);
-  pixbuf->set_pixel_hsl_blend(i_b, __base_hue-30.0f, 0.9f, l_z, 200.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
-
-  ++step;
+  _pixbuf->set_pixel_hsl_blend(i_b, __base_hue-30.0f, 0.9f, l_z, 200.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
 }

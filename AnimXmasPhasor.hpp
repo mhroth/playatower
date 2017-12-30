@@ -24,19 +24,18 @@ class AnimXmasPhasor: public Animation {
   AnimXmasPhasor(PixelBuffer *pixbuf);
   ~AnimXmasPhasor();
 
-  void process(double dt) override;
-
   void setParameter(int index, float value) override;
   float getParameter(int index) override;
 
   const char *getName() override { return "Phasor"; }
 
  private:
+  void _process(double dt) override;
+
   void updateTarget(float value);
 
-  float t, __t_o, __t_c;
+  float __t_o, __t_c;
   float f_min, __f_target, __f_prev_target;
-  std::default_random_engine __gen;
   std::uniform_real_distribution<float> __d_uniform;
   std::exponential_distribution<float> __d_exp;
 };

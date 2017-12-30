@@ -24,21 +24,20 @@ class AnimEiffelTower: public Animation {
   AnimEiffelTower(PixelBuffer *pixbuf);
   ~AnimEiffelTower();
 
-  void process(double dt) override;
-
   void setParameter(int index, float value) override;
+  float getParameter(int index) override;
 
   const char *getName() override { return "Eiffel Tower"; }
 
  private:
-  double t;
-  float mean_flash_time;
-  float flash_decay_period;
+  void _process(double dt) override;
+
+  float __mean_flash_time;
+  float __flash_decay_period;
   float __shimmer_rate;
   std::vector<float> __shimmer;
-  std::default_random_engine gen;
-  std::uniform_real_distribution<float> d_uniform;
-  std::normal_distribution<float> d_gauss;
+  std::uniform_real_distribution<float> __d_uniform;
+  std::normal_distribution<float> __d_gauss;
 };
 
 #endif // _ANIM_EIFEL_TOWER_HPP_

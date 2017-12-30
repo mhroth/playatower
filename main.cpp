@@ -38,12 +38,11 @@
 #include "AnimLorenzOsc.hpp"
 #include "AnimLorenzOscFade.hpp"
 #include "AnimChuaOsc.hpp"
-#include "AnimFirefly.hpp"
-#include "AnimVanDerPol.hpp"
 #include "AnimAllWhite.hpp"
 #include "AnimLighthouse.hpp"
 #include "AnimEiffelTower.hpp"
 #include "AnimXmasPhasor.hpp"
+#include "AnimRandomFlow.hpp"
 
 #define SEC_TO_NS 1000000000LL
 #define SPI_HZ 2*1000000
@@ -221,7 +220,7 @@ int main(int narg, char **argc) {
       pixbuf->clear(); // clear the pixel buffer
 
       // instantiate the next animation
-      anim_index = (anim_index+1) % 7;
+      anim_index = (anim_index+1) % 8;
       switch (anim_index) {
         default:
         case 0: anim = new AnimPhasor(pixbuf); break;
@@ -231,8 +230,7 @@ int main(int narg, char **argc) {
         case 4: anim = new AnimChuaOsc(pixbuf); break;
         case 5: anim = new AnimLighthouse(pixbuf); break;
         case 6: anim = new AnimEiffelTower(pixbuf); break;
-        // case 4: anim = new AnimVanDerPol(pixbuf); break;
-        // case 5: anim = new AnimAllWhite(pixbuf); break;
+        case 7: anim = new AnimRandomFlow(pixbuf); break;
       }
 
       // FPS = anim->getPreferredFps();

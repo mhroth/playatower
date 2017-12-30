@@ -17,8 +17,9 @@
 #include "Animation.hpp"
 
 Animation::Animation(PixelBuffer *pixbuf) :
-    pixbuf(pixbuf), step(0) {
+    _pixbuf(pixbuf), _step(0), _t(0.0) {
   assert(pixbuf != nullptr);
+  _gen = std::default_random_engine(std::chrono::system_clock::now().time_since_epoch().count());
 }
 
 double Animation::lin_scale(double x, double min_in, double max_in, double min_out, double max_out) {
@@ -41,4 +42,10 @@ float Animation::pdf_logNormal(float x, float mu, float sigma) {
   assert(sigma > 0.0f);
   const float a = (logf(x) - mu) / sigma;
   return expf(-0.5*a*a) / (x*sigma*M_SQRT_TAU);
+}
+
+void Animation::process(double dt) {
+  _t += dt; // keep track of global animation time
+  _process(dt);
+  ++_step; // keep track of number of elapsed frames
 }

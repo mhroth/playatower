@@ -24,9 +24,10 @@ class AnimAllWhite: public Animation {
   AnimAllWhite(PixelBuffer *pixbuf);
   ~AnimAllWhite();
 
-  void process(double dt) override;
-
   const char *getName() override { return "All White"; }
+
+ private:
+  void _process(double dt) override;
 };
 
 #endif // _ANIM_ALL_WHITE_HPP_

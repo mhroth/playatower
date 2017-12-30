@@ -24,15 +24,14 @@ class AnimLorenzOscFade: public Animation {
   AnimLorenzOscFade(PixelBuffer *pixbuf);
   ~AnimLorenzOscFade();
 
-  void process(double dt) override;
-
   void setParameter(int index, float value) override;
   float getParameter(int index) override;
 
   const char *getName() override { return "Lorenz Oscillator - Fade"; }
 
  private:
-  double t; // total elapsed time
+  void _process(double dt) override;
+
   double x, y, z, dx, dy, dz;
   double beta, rho, sigma;
   double min_x, max_x, min_y, max_y, min_z, max_z;

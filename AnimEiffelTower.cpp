@@ -22,16 +22,14 @@
 #define BASE_COLOR_B (1.0f/255.0f)
 
 AnimEiffelTower::AnimEiffelTower(PixelBuffer *pixbuf) : Animation(pixbuf) {
-  t = 0.0;
-  mean_flash_time = 10.0f; // seconds
-  flash_decay_period = 0.1f; // seconds
+  __mean_flash_time = 10.0f; // seconds
+  __flash_decay_period = 0.1f; // seconds
   __shimmer_rate = 0.3f;
   __shimmer.resize(pixbuf->getNumLeds(), 1.0f);
-  gen = std::default_random_engine(std::chrono::system_clock::now().time_since_epoch().count());
-  d_uniform = std::uniform_real_distribution<float>(0.0f, 1.0f);
-  d_gauss = std::normal_distribution<float>(1.0f, 0.2f);
+  __d_uniform = std::uniform_real_distribution<float>(0.0f, 1.0f);
+  __d_gauss = std::normal_distribution<float>(1.0f, 0.2f);
 
-  pixbuf->fill_rgb(BASE_COLOR_R, BASE_COLOR_G, BASE_COLOR_B);
+  _pixbuf->fill_rgb(BASE_COLOR_R, BASE_COLOR_G, BASE_COLOR_B);
 }
 
 AnimEiffelTower::~AnimEiffelTower() {}
@@ -39,31 +37,34 @@ AnimEiffelTower::~AnimEiffelTower() {}
 void AnimEiffelTower::setParameter(int index, float value) {
   switch (index) {
     case 0: {
-      mean_flash_time = powf(10.0f, lin_scale(value, 0.0f, 1.0f, -2.0f, 2.0f));
+      __mean_flash_time = powf(10.0f, lin_scale(value, 0.0f, 1.0f, -2.0f, 2.0f));
       break;
     }
     default: break;
   }
 }
 
-void AnimEiffelTower::process(double dt) {
-  t += dt;
+float AnimEiffelTower::getParameter(int index) {
+  switch (index) {
+    case 0: return __mean_flash_time;
+    default: return -1.0f;
+  }
+}
 
-  float p_flash = 1.0f - expf(-dt/mean_flash_time);
-  float r_flash_decay = 1.0f - expf(-dt/flash_decay_period);
+void AnimEiffelTower::_process(double dt) {
+  float p_flash = 1.0f - expf(-dt/__mean_flash_time);
+  float r_flash_decay = 1.0f - expf(-dt/__flash_decay_period);
 
-  const int N = pixbuf->getNumLeds();
+  const int N = _pixbuf->getNumLeds();
   for (int i = 0; i < N; i++) {
-    if (d_uniform(gen) < p_flash) {
-      pixbuf->set_pixel_rgb_blend(i, 1.0f, 1.0f, 1.0f);
+    if (__d_uniform(_gen) < p_flash) {
+      _pixbuf->set_pixel_rgb_blend(i, 1.0f, 1.0f, 1.0f);
     } else {
-      __shimmer[i] = __shimmer[i]*__shimmer_rate + d_gauss(gen)*(1.0f-__shimmer_rate);
+      __shimmer[i] = __shimmer[i]*__shimmer_rate + __d_gauss(_gen)*(1.0f-__shimmer_rate);
       float r = BASE_COLOR_R * __shimmer[i];
       float g = BASE_COLOR_G * __shimmer[i];
       float b = BASE_COLOR_B * __shimmer[i];
-      pixbuf->set_pixel_rgb_blend(i, r, g, b, r_flash_decay, PixelBuffer::BlendMode::ADD);
+      _pixbuf->set_pixel_rgb_blend(i, r, g, b, r_flash_decay, PixelBuffer::BlendMode::ADD);
     }
   }
-
-  ++step;
 }

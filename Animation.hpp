@@ -37,7 +37,10 @@ class Animation {
   Animation(PixelBuffer *pixbuf);
   virtual ~Animation() {}
 
-  virtual void process(double dt) = 0;
+  void process(double dt);
+
+  /** Returns the total number of animation frames run to date. */
+  uint32_t getSteps() { return _step; }
 
   /** Get the name of this animation. */
   virtual const char *getName() { return "animation"; }
@@ -65,6 +68,8 @@ class Animation {
   virtual double getPreferredFps() { return -1.0; }
 
  protected:
+  virtual void _process(double dt) = 0;
+
   /** Linear scaling. */
   double lin_scale(double x, double min_in, double max_in, double min_out, double max_out);
 
@@ -96,9 +101,16 @@ class Animation {
   float pdf_logNormal(float x, float mu, float sigma);
 
   /** The number of frames processed so far by this animation. */
-  uint32_t step;
+  uint32_t _step;
 
-  PixelBuffer *pixbuf;
+  /** The pixel buffer. */
+  PixelBuffer *_pixbuf;
+
+  /** The total elapsed time in seconds in this aniamation. */
+  float _t;
+
+  /** A random number generator. */
+  std::default_random_engine _gen;
 };
 
 #endif // _ANIMATION_HPP_

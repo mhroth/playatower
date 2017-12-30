@@ -3,10 +3,11 @@ CXX=clang++
 MKDIR=mkdir -p
 SRCDIR=.
 OUTDIR=.
-BASEFLAGS=-mcpu=cortex-a53 -mfloat-abi=hard -mfpu=neon-fp-armv8 -mtune=cortex-a53 # RPi3
-# BASEFLAGS=-mcpu=cortex-a7 -mfloat-abi=hard -mfpu=neon -mtune=cortex-a7 # RPi2
-CFLAGS=$(BASEFLAGS) -std=c11 -O3 -DNDEBUG -ffast-math
-CXXFLAGS=$(BASEFLAGS) -std=c++11 -fno-exceptions -fno-rtti
+BASEFLAGS=-O3 -DNDEBUG -ffast-math
+ARCHFLAGS=-mcpu=cortex-a53 -mfloat-abi=hard -mfpu=neon-fp-armv8 -mtune=cortex-a53 # RPi3
+# ARCHFLAGS=-mcpu=cortex-a7 -mfloat-abi=hard -mfpu=neon -mtune=cortex-a7 # RPi2
+CFLAGS=$(ARCHFLAGS) $(BASEFLAGS) -std=c11
+CXXFLAGS=$(ARCHFLAGS) $(BASEFLAGS) -std=c++11 -fno-exceptions -fno-rtti
 LIBFLAGS=-lpthread
 
 HEADERS=$(wildcard $(SRCDIR)/*.h)
