@@ -113,6 +113,7 @@ class PixelBuffer {
   uint8_t *spi_data;
 
   uint32_t numSpiBytes;
+  uint32_t numSpiTrailerBytes;
 };
 
 #endif // _PIXEL_BUFER_HPP_

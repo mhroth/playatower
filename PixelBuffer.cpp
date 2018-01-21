@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017, Martin Roth (mhroth@gmail.com)
+ * Copyright (c) 2017-2018, Martin Roth (mhroth@gmail.com)
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -14,6 +14,7 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <arm_neon.h>
 #include <math.h>
 
 #include "PixelBuffer.hpp"
@@ -43,21 +44,20 @@ static inline float _clamp(float x) {
 PixelBuffer::PixelBuffer(uint32_t numLeds, uint8_t global) :
     numLeds(numLeds), global(global) {
 
-  // RGB buffer. Order is red, green, blue
-  rgb = (float *) malloc(3 * numLeds * sizeof(float));
+  // RGB buffer. Order is global, blue, green, red (same as APA-102 datastream)
+  rgb = (float *) malloc(4 * numLeds * sizeof(float));
   assert(rgb != nullptr);
 
   // prepare SPI data
   // https://cpldcpu.com/2014/11/30/understanding-the-apa102-superled/
-  const int NUM_SPI_TRAILER_BYTES = (numLeds >> 4) + 1;
-  numSpiBytes = 4 + (4*numLeds) + NUM_SPI_TRAILER_BYTES;
-  // TODO(mhroth): unknown why 3x bytes are needed. But otherwise free(spi_data) fails!
-  spi_data = (uint8_t *) malloc(3 * numSpiBytes * sizeof(uint8_t));
+  numSpiTrailerBytes = (numLeds >> 4) + 1;
+  numSpiBytes = 4 + (4*numLeds) + numSpiTrailerBytes;
+  spi_data = (uint8_t *) malloc(numSpiBytes * sizeof(uint8_t));
   assert(spi_data != nullptr);
 
   // initialise SPI data
   memset(spi_data, 0, numSpiBytes);
-  memset(spi_data + (4*(numLeds+1)), NUM_SPI_TRAILER_BYTES, 0xFF); // set the trailer
+  memset(spi_data + (4*(numLeds+1)), 0xFF, numSpiTrailerBytes); // set the trailer
 
   // reset all buffers to zero
   clear();
@@ -80,7 +80,7 @@ float PixelBuffer::getAmperes() {
 }
 
 void PixelBuffer::clear() {
-  memset(rgb, 0, 3*numLeds*sizeof(float));
+  memset(rgb, 0, 4*numLeds*sizeof(float));
 }
 
 void PixelBuffer::fill_rgb(float r, float g, float b) {
@@ -100,6 +100,58 @@ uint8_t *PixelBuffer::getSpiBytes(float n) {
   // TODO(mhroth): just for fun, SIMD type conversion and table lookup,
   // https://stackoverflow.com/questions/22158186/arm-neon-how-to-implement-a-256bytes-look-up-table
 
+  const float32x4_t CLAMP_ONE = vdupq_n_f32(1.0f);
+  const float32x4_t CLAMP_ZERO = vdupq_n_f32(0.0f);
+  const float32x4_t ns = (float32x4_t) {0.0f, 1.0f-n*0.75f, 1.0f-n*0.60f, 1.0f}; // nightshift
+  const uint8_t G = 0xE0 | global;
+  const uint8x16_t GLOBAL = (uint8x16_t) {G,0,0,0,G,0,0,0,G,0,0,0,G,0,0,0};
+  for (int i = 0, j = 0; i < numLeds; i+=4, j+=16) {
+    float32x4_t x = vld1q_f32(rgb+j);
+    x = vmaxq_f32(x, CLAMP_ZERO); // clamp to [0,1]
+    x = vminq_f32(x, CLAMP_ONE);
+    x = vmulq_f32(x, ns); // apply nightshift
+    // apply gamma adjustment (based on lookup table)
+    // NOTE(mhroth): original LUT is roughly x**2.8 (==14/5). In this case we calculate x**3 as it is much
+    // easier and faster. The deviation is at most 7 steps darker.
+    x = vmulq_f32(x, vmulq_f32(x, x));
+    x = vmulq_n_f32(x, 255.0f); // scale to [0,255], NOTE(mhroth): could merge into nightshift multiply
+    uint16x4_t x_u16 = vmovn_u32(vcvtq_u32_f32(x));
+
+    float32x4_t y = vld1q_f32(rgb+j+4);
+    y = vmaxq_f32(vminq_f32(y, CLAMP_ONE), CLAMP_ZERO);
+    y = vmulq_f32(y, ns);
+    y = vmulq_f32(y, vmulq_f32(y, y));
+    y = vmulq_n_f32(y, 255.0f);
+    uint16x4_t y_u16 = vmovn_u32(vcvtq_u32_f32(y));
+
+    uint8x8_t z_u8 = vmovn_u16(vcombine_u16(x_u16, y_u16));
+
+    float32x4_t a = vld1q_f32(rgb+j+8);
+    a = vmaxq_f32(vminq_f32(a, CLAMP_ONE), CLAMP_ZERO);
+    a = vmulq_f32(a, ns);
+    a = vmulq_f32(a, vmulq_f32(a, a));
+    a = vmulq_n_f32(a, 255.0f);
+    uint16x4_t a_u16 = vmovn_u32(vcvtq_u32_f32(a));
+
+    float32x4_t b = vld1q_f32(rgb+j+12);
+    b = vmaxq_f32(vminq_f32(b, CLAMP_ONE), CLAMP_ZERO);
+    b = vmulq_f32(b, ns);
+    b = vmulq_f32(b, vmulq_f32(b, b));
+    b = vmulq_n_f32(b, 255.0f);
+    uint16x4_t b_u16 = vmovn_u32(vcvtq_u32_f32(b));
+
+    uint8x8_t c_u8 = vmovn_u16(vcombine_u16(a_u16, b_u16));
+
+    uint8x16_t d_u8 = vorrq_u8(vcombine_u8(z_u8, c_u8), GLOBAL); // add global value into bytestream
+
+    // write to the spi_data buffer
+    vst1q_u8(spi_data+i+1, d_u8);
+  }
+
+  // clear trailing bytes, as above loop may have overwriten some
+  memset(spi_data + (4*(numLeds+1)), 0xFF, numSpiTrailerBytes);
+
+/*
   const float n_b = 1.0f - n*0.75f;
   const float n_g = 1.0f - n*0.60f;
   for (int i = 0; i < numLeds; ++i) {
@@ -109,7 +161,7 @@ uint8_t *PixelBuffer::getSpiBytes(float n) {
     spi_data[j+2] = APA102_GAMMA[(uint8_t) (_clamp(rgb[i*3+1]) * n_g * 255.0f)]; // green
     spi_data[j+3] = APA102_GAMMA[(uint8_t) (_clamp(rgb[i*3+0]) * 255.0f)]; // red
   }
-
+*/
   return spi_data;
 }
 
