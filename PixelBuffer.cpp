@@ -83,6 +83,27 @@ void PixelBuffer::clear() {
   memset(rgb, 0, 4*numLeds*sizeof(float));
 }
 
+// https://gist.github.com/paulkaplan/5184275
+// http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
+static void __kelvin_to_rgb(float kelvin, float *r, float *g, float *b) {
+  // TODO(mhroth): update the constants to scale to [0,1], not [0,255]
+  float temp = kelvin / 100.0f;
+  float _r, _g, _b;
+  if (temp <= 66) {
+    _r = 255.0f;
+    _g = 99.4708025861f * logf(temp) - 161.1195681661f;
+    _b = (temp <= 19.0f) ? 0.0f : 138.5177312231f * logf(temp-10.0f) - 305.0447927307f;
+  } else {
+    _r = 329.698727446f * powf(temp-60.0f, -0.1332047592f);
+    _g = 288.1221695283f * powf(temp-60.0f, -0.0755148492f);
+    _b = 255.0f;
+  }
+
+  *r = fmaxf(0.0f, fminf(1.0f, _r/255.0f));
+  *g = fmaxf(0.0f, fminf(1.0f, _g/255.0f));
+  *b = fmaxf(0.0f, fminf(1.0f, _b/255.0f));
+}
+
 void PixelBuffer::fill_rgb(float r, float g, float b) {
   for (int i = 0; i < numLeds; i++) {
     set_pixel_rgb_blend(i, r, g, b);
@@ -104,17 +125,18 @@ void PixelBuffer::apply_gain(float f) {
 }
 
 uint8_t *PixelBuffer::getSpiBytes(float n) {
-  // TODO(mhroth): just for fun, SIMD type conversion and table lookup,
-  // https://stackoverflow.com/questions/22158186/arm-neon-how-to-implement-a-256bytes-look-up-table
-
   const float32x4_t CLAMP_ONE = vdupq_n_f32(1.0f);
   const float32x4_t CLAMP_ZERO = vdupq_n_f32(0.0f);
+
+  // nightshift
+  float rw, gw, bw;
+  __kelvin_to_rgb(6600.0f*(1.0f-n), &rw, &gw, &bw);
   const float32x4_t ns = (float32x4_t) {
-      0.0f,         // global
-      1.0f-n*0.75f, // blue
-      1.0f-n*0.60f, // green
-      1.0f          // red
-  };                // nightshift
+      0.0f, // global
+      bw,   // blue
+      gw,   // green
+      rw    // red
+  };
   const uint8_t G = 0xE0 | global;
   const uint8x16_t GLOBAL = (uint8x16_t) {G,0,0,0,G,0,0,0,G,0,0,0,G,0,0,0};
   for (int i = 0, j = 0; i < numLeds; i+=4, j+=16) {
