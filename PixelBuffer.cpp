@@ -56,8 +56,8 @@ PixelBuffer::PixelBuffer(uint32_t numLeds, uint8_t global) :
   assert(spi_data != nullptr);
 
   // initialise SPI data
-  memset(spi_data, 0, numSpiBytes);
-  memset(spi_data + (4*(numLeds+1)), 0xFF, numSpiTrailerBytes); // set the trailer
+  memset(spi_data, 0, numSpiBytes); // leading zeros
+  memset(spi_data + (4*(numLeds+1)), 0xFF, numSpiTrailerBytes); // trailing ones
 
   // reset all buffers to zero
   clear();
@@ -90,10 +90,17 @@ void PixelBuffer::fill_rgb(float r, float g, float b) {
 }
 
 void PixelBuffer::apply_gain(float f) {
-  const int n = numLeds * 3;
+  for (int i = 0, j = 0; i < numLeds; ++i, j+=4) {
+    float32x4_t x = vld1q_f32(rgb+j);
+    x = vmulq_n_f32(x, f);
+    vst1q_f32(rgb+j, x);
+  }
+/*
+  const int n = numLeds * 4;
   for (int i = 0; i < n; ++i) {
     rgb[i] *= f;
   }
+*/
 }
 
 uint8_t *PixelBuffer::getSpiBytes(float n) {
@@ -102,7 +109,12 @@ uint8_t *PixelBuffer::getSpiBytes(float n) {
 
   const float32x4_t CLAMP_ONE = vdupq_n_f32(1.0f);
   const float32x4_t CLAMP_ZERO = vdupq_n_f32(0.0f);
-  const float32x4_t ns = (float32x4_t) {0.0f, 1.0f-n*0.75f, 1.0f-n*0.60f, 1.0f}; // nightshift
+  const float32x4_t ns = (float32x4_t) {
+      0.0f,         // global
+      1.0f-n*0.75f, // blue
+      1.0f-n*0.60f, // green
+      1.0f          // red
+  };                // nightshift
   const uint8_t G = 0xE0 | global;
   const uint8x16_t GLOBAL = (uint8x16_t) {G,0,0,0,G,0,0,0,G,0,0,0,G,0,0,0};
   for (int i = 0, j = 0; i < numLeds; i+=4, j+=16) {
@@ -114,7 +126,7 @@ uint8_t *PixelBuffer::getSpiBytes(float n) {
     // NOTE(mhroth): original LUT is roughly x**2.8 (==14/5). In this case we calculate x**3 as it is much
     // easier and faster. The deviation is at most 7 steps darker.
     x = vmulq_f32(x, vmulq_f32(x, x));
-    x = vmulq_n_f32(x, 255.0f); // scale to [0,255], NOTE(mhroth): could merge into nightshift multiply
+    x = vmulq_n_f32(x, 255.0f);
     uint16x4_t x_u16 = vmovn_u32(vcvtq_u32_f32(x));
 
     float32x4_t y = vld1q_f32(rgb+j+4);
@@ -145,7 +157,7 @@ uint8_t *PixelBuffer::getSpiBytes(float n) {
     uint8x16_t d_u8 = vorrq_u8(vcombine_u8(z_u8, c_u8), GLOBAL); // add global value into bytestream
 
     // write to the spi_data buffer
-    vst1q_u8(spi_data+i+1, d_u8);
+    vst1q_u8(spi_data+4+j, d_u8);
   }
 
   // clear trailing bytes, as above loop may have overwriten some
@@ -157,9 +169,9 @@ uint8_t *PixelBuffer::getSpiBytes(float n) {
   for (int i = 0; i < numLeds; ++i) {
     int j = (i+1)*4;
     spi_data[j+0] = 0xE0 | global;
-    spi_data[j+1] = APA102_GAMMA[(uint8_t) (_clamp(rgb[i*3+2]) * n_b * 255.0f)]; // blue
-    spi_data[j+2] = APA102_GAMMA[(uint8_t) (_clamp(rgb[i*3+1]) * n_g * 255.0f)]; // green
-    spi_data[j+3] = APA102_GAMMA[(uint8_t) (_clamp(rgb[i*3+0]) * 255.0f)]; // red
+    spi_data[j+1] = APA102_GAMMA[(uint8_t) (_clamp(rgb[i*4+1]) * n_b * 255.0f)]; // blue
+    spi_data[j+2] = APA102_GAMMA[(uint8_t) (_clamp(rgb[i*4+2]) * n_g * 255.0f)]; // green
+    spi_data[j+3] = APA102_GAMMA[(uint8_t) (_clamp(rgb[i*4+3]) * 255.0f)]; // red
   }
 */
   return spi_data;
@@ -167,33 +179,33 @@ uint8_t *PixelBuffer::getSpiBytes(float n) {
 
 void PixelBuffer::set_pixel_rgb_blend(int i, float r, float g, float b, float a, BlendMode mode) {
   assert(i >= 0 && i < numLeds);
-  const int j = 3 * i;
+  const int j = 4 * i;
 
   switch (mode) {
     default:
     case SET: {
-      rgb[j+0] = r; rgb[j+1] = g; rgb[j+2] = b;
+      rgb[j+3] = r; rgb[j+2] = g; rgb[j+1] = b;
       break;
     }
     case ADD: {
       const float z = 1.0f - a;
-      rgb[j+0] = a*r + z*rgb[j+0]; rgb[j+1] = a*g + z*rgb[j+1]; rgb[j+2] = a*b + z*rgb[j+2];
+      rgb[j+3] = a*r + z*rgb[j+3]; rgb[j+2] = a*g + z*rgb[j+2]; rgb[j+1] = a*b + z*rgb[j+1];
       break;
     }
     case ACCUMULATE: {
-      rgb[j+0] += a*r; rgb[j+1] += a*g; rgb[j+2] += a*b;
+      rgb[j+3] += a*r; rgb[j+2] += a*g; rgb[j+1] += a*b;
       break;
     }
     case DIFFERENCE: {
-      set_pixel_rgb_blend(i, fabsf(r-rgb[j+0]), fabsf(g-rgb[j+1]), fabsf(b-rgb[j+2]), a, BlendMode::ADD);
+      set_pixel_rgb_blend(i, fabsf(r-rgb[j+3]), fabsf(g-rgb[j+2]), fabsf(b-rgb[j+1]), a, BlendMode::ADD);
       break;
     }
     case MULTIPLY: {
-      set_pixel_rgb_blend(i, rgb[j+0]*r, rgb[j+1]*g, rgb[j+2]*g, a, BlendMode::ADD);
+      set_pixel_rgb_blend(i, rgb[j+3]*r, rgb[j+2]*g, rgb[j+1]*g, a, BlendMode::ADD);
       break;
     }
     case SCREEN: {
-      rgb[j+0] = 1.0f-(r*rgb[j+0]); rgb[j+1] = 1.0f-(g*rgb[j+1]); rgb[j+2] = 1.0f-(b*rgb[j+2]);
+      rgb[j+3] = 1.0f-(r*rgb[j+3]); rgb[j+2] = 1.0f-(g*rgb[j+2]); rgb[j+1] = 1.0f-(b*rgb[j+1]);
       break;
     }
   }
@@ -201,7 +213,7 @@ void PixelBuffer::set_pixel_rgb_blend(int i, float r, float g, float b, float a,
 
 // http://www.rapidtables.com/convert/color/hsl-to-rgb.htm
 void PixelBuffer::set_pixel_hsl_blend(int i, float h, float s, float l, float a, BlendMode mode) {
-  // assert(h >= 0.0f && h < 360.0f);
+  // wrap hue around [0,360]
   if (h < 0.0f) h += 360.0f;
   else if (h > 360.0f) h -= 360.0f;
   s = fmaxf(0.0f, fminf(1.0f, s));
