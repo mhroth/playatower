@@ -60,7 +60,11 @@ class PixelBuffer {
 
   uint8_t getGlobal() { return global; }
 
+  /** The number of valid bytes in the SPI buffer. */
   uint32_t getNumSpiBytes() { return numSpiBytes; }
+
+  /** The total number of bytes backing the SPI buffer. */
+  uint32_t getNumSpiBytesTotal() { return numSpiBytesTotal; }
 
   /**
    * Converts RGB data into a buffer suitable for sending over SPI to the LED strip.
@@ -109,11 +113,20 @@ class PixelBuffer {
   /** The total number of LEDs in this animation. */
   uint32_t numLeds;
 
+  /** The RGB pixel buffer. It has a format (per LED) of GLOBAL, BLUE, GREEN, RED. */
   float *rgb;
+
+  /** The SPI buffer. */
   uint8_t *spi_data;
 
+  /** The total number of bytes in the SPI buffer. */
   uint32_t numSpiBytes;
+
+  /** The number of trailer bytes in the SPI buffer. */
   uint32_t numSpiTrailerBytes;
+
+  /** The total length of the spi_data buffer. */
+  uint32_t numSpiBytesTotal;
 };
 
 #endif // _PIXEL_BUFER_HPP_

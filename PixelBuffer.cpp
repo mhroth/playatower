@@ -19,6 +19,7 @@
 
 #include "PixelBuffer.hpp"
 
+// out = in**2.8
 static const uint8_t APA102_GAMMA[] = {
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,
@@ -50,16 +51,17 @@ PixelBuffer::PixelBuffer(uint32_t numLeds, uint8_t global) :
 
   // prepare SPI data
   // https://cpldcpu.com/2014/11/30/understanding-the-apa102-superled/
+  // NOTE(mhroth): because getSpiBytes() processes 4 LEDS at a time (i.e. 16-byte output),
+  // and so that no memory outside of spi_data will be overwritten,
+  // ((4*numLeds) + numSpiTrailerBytes) must be positive mulitple of 16.
   numSpiTrailerBytes = (numLeds >> 4) + 1;
   numSpiBytes = 4 + (4*numLeds) + numSpiTrailerBytes;
-  spi_data = (uint8_t *) malloc(numSpiBytes * sizeof(uint8_t));
+  // ensure that it is the next largest multiple-of-16 (if necessary)
+  numSpiBytesTotal = (numSpiBytes + 15) & ~0xF;
+  spi_data = (uint8_t *) malloc(numSpiBytesTotal * sizeof(uint8_t));
   assert(spi_data != nullptr);
 
-  // initialise SPI data
-  memset(spi_data, 0, numSpiBytes); // leading zeros
-  memset(spi_data + (4*(numLeds+1)), 0xFF, numSpiTrailerBytes); // trailing ones
-
-  // reset all buffers to zero
+  // reset all buffers
   clear();
 }
 
@@ -80,7 +82,11 @@ float PixelBuffer::getAmperes() {
 }
 
 void PixelBuffer::clear() {
+  // reset RGB buffer
   memset(rgb, 0, 4*numLeds*sizeof(float));
+
+  // reset SPI buffer
+  memset(spi_data, 0, numSpiBytesTotal); // leading zeros
 }
 
 // https://gist.github.com/paulkaplan/5184275

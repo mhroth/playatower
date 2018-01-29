@@ -154,6 +154,9 @@ int main(int narg, char **argc) {
   INP_GPIO(GPIO_INPUT_PIN); // configure GPIO pin as input
 
   PixelBuffer *pixbuf = new PixelBuffer(NUM_LEDS, GLOBAL_BRIGHTNESS);
+  printf("* SPI buffer: %i [%i] bytes\n", pixbuf->getNumSpiBytes(), pixbuf->getNumSpiBytesTotal());
+  printf("\n");
+
   Animation *anim = new AnimPhasor(pixbuf); // initialise with default animation
 
   if (MAX_WATTS > 0.0f) {
