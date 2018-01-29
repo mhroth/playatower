@@ -92,22 +92,21 @@ void PixelBuffer::clear() {
 // https://gist.github.com/paulkaplan/5184275
 // http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
 static void __kelvin_to_rgb(float kelvin, float *r, float *g, float *b) {
-  // TODO(mhroth): update the constants to scale to [0,1], not [0,255]
   float temp = kelvin / 100.0f;
   float _r, _g, _b;
-  if (temp <= 66) {
-    _r = 255.0f;
-    _g = 99.4708025861f * logf(temp) - 161.1195681661f;
-    _b = (temp <= 19.0f) ? 0.0f : 138.5177312231f * logf(temp-10.0f) - 305.0447927307f;
+  if (temp <= 66.0f) {
+    _r = 1.0f;
+    _g = 0.39008157876902f * logf(temp) - 0.631841443788627f;
+    _b = (temp <= 19.0f) ? 0.0f : 0.543206789110196f * logf(temp-10.0f) - 1.19625408914f;
   } else {
-    _r = 329.698727446f * powf(temp-60.0f, -0.1332047592f);
-    _g = 288.1221695283f * powf(temp-60.0f, -0.0755148492f);
-    _b = 255.0f;
+    _r = 1.292936186062745f * powf(temp-60.0f, -0.1332047592f);
+    _g = 1.129890860895294f * powf(temp-60.0f, -0.0755148492f);
+    _b = 1.0f;
   }
 
-  *r = fmaxf(0.0f, fminf(1.0f, _r/255.0f));
-  *g = fmaxf(0.0f, fminf(1.0f, _g/255.0f));
-  *b = fmaxf(0.0f, fminf(1.0f, _b/255.0f));
+  *r = fmaxf(0.0f, fminf(1.0f, _r));
+  *g = fmaxf(0.0f, fminf(1.0f, _g));
+  *b = fmaxf(0.0f, fminf(1.0f, _b));
 }
 
 void PixelBuffer::fill_rgb(float r, float g, float b) {
