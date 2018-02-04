@@ -72,9 +72,10 @@ PixelBuffer::~PixelBuffer() {
 
 float PixelBuffer::getAmperes() {
   float a = 0.0f;
-  const int N = 3 * numLeds;
-  for (int i = 0; i < N; ++i) {
-    a += _clamp(rgb[i]);
+  for (int i = 0, j = 0; i < numLeds; ++i, j+=4) {
+    a += _clamp(rgb[j+1]); // blue
+    a += _clamp(rgb[j+2]); // green
+    a += _clamp(rgb[j+3]); // red
   }
   a *= 0.02f; // 20mA per color LED
   a *= (global/31.0f); // apply global brightness setting
