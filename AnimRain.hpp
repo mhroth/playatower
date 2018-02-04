@@ -35,19 +35,23 @@ class AnimRain: public Animation {
   typedef struct {
     float t;   // time at which this drop was instantiated
     float v_o; // initial velocity
-    float d;   // start point
     int i;
   } Drop;
 
   void _process(double dt) override;
 
   std::list<Drop> drop_list;
+  std::list<Drop> up_list;
 
   float __t_d; // time of next drop
+  float __t_u; // time of next up
+  float __t_dd; // time of next drop distribution update
   float __a; // acceleration
+  float __drop_lambda;
   std::exponential_distribution<float> __d_exp;
+  std::exponential_distribution<float> __d_up;
   std::uniform_real_distribution<float> __d_vel;
-  std::uniform_real_distribution<float> __d_uniform;
+  std::normal_distribution<float> __d_dd;
 
   float v_min, v_max;
 };

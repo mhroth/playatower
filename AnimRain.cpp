@@ -16,12 +16,18 @@
 
 #include "AnimRain.hpp"
 
+#define DROP_INTERVAL_UPDATE_SEC 10.0f
+
 AnimRain::AnimRain(PixelBuffer *pixbuf) : Animation(pixbuf) {
-  __d_uniform = std::uniform_real_distribution<float>(0.0f, 0.3f); // initial position offset
-  __d_exp = std::exponential_distribution<float>(1.0f/0.15f); // 5/second
+  __d_dd = std::normal_distribution<float>(0.0f, 0.2f);
+  __drop_lambda = 1.0f; // 1/second
+  __d_exp = std::exponential_distribution<float>(__drop_lambda);
+  __d_up = std::exponential_distribution<float>(1.0f/4.0f); // every 4 seconds
   __d_vel = std::uniform_real_distribution<float>(0.0f, 5.0f); // initial velocity
   __t_d = __d_exp(_gen); // schedule first drop
-  __a = -3.1f; // default acceleration
+  __t_u = __d_up(_gen);
+  __t_dd = DROP_INTERVAL_UPDATE_SEC;
+  __a = -1.4f; // default acceleration
 
   v_min = INFINITY;
   v_max = -INFINITY;
@@ -44,13 +50,21 @@ float AnimRain::getParameter(int index) {
 }
 
 void AnimRain::_process(double dt) {
+  if (_t >= __t_dd) {
+    __drop_lambda += __d_dd(_gen);
+    // ensure that lambda is never less frequent than once per 10s
+    __drop_lambda = fmaxf(__drop_lambda, 0.1f);
+    __d_exp = std::exponential_distribution<float>(__drop_lambda);
+    __t_dd = _t + DROP_INTERVAL_UPDATE_SEC;
+  }
+
+
   if (_t >= __t_d) {
     // add a new Drop to the list
 
     Drop d = {
       _t,                // initial time
       __d_vel(_gen),     // initial velocity
-      __d_uniform(_gen), // initial position
       0
     };
     drop_list.push_back(d);
@@ -82,13 +96,68 @@ void AnimRain::_process(double dt) {
     if (a < 0.0f || b >= _pixbuf->getNumLeds()) continue;
 
     float h = lin_scale(v, v_min, v_max, 180.0f, 240.0f);
-    float vv = lin_scale(v, v_min, v_max, 0.0f, 0.8f);
+    float vv = lin_scale(v, v_min, v_max, 0.4f, 0.8f);
 
-    _pixbuf->set_pixel_hsl_blend((int) a, h, c, vv, 100*dt, PixelBuffer::BlendMode::ACCUMULATE);
-    _pixbuf->set_pixel_hsl_blend((int) b, h, e, vv, 100*dt, PixelBuffer::BlendMode::ACCUMULATE);
+    _pixbuf->set_pixel_hsl_blend((int) a, h, c, 0.5f, 100*dt, PixelBuffer::BlendMode::ACCUMULATE);
+    _pixbuf->set_pixel_hsl_blend((int) b, h, e, 0.5f, 100*dt, PixelBuffer::BlendMode::ACCUMULATE);
   }
 
   while (!drop_list.empty() && drop_list.front().i <= 0) {
     drop_list.pop_front();
+  }
+
+
+
+  if (_t >= __t_u) {
+    // add a new Up to the list
+
+    Drop d = {_t, 0.0f, 0};
+    up_list.push_back(d);
+
+    // schedule the next drop
+    __t_u = _t + __d_up(_gen);
+  }
+
+  for (Drop &d : up_list) {
+    float t = _t - d.t;
+    float y = 0.4f*t + 0.0f;
+
+    y *= 30.0f;
+    float a, b, c, e;
+    a = floorf(y);
+    b = a + 1.0f;
+    c = y - a;
+    e = b - y;
+
+    d.i = (int) a;
+
+    // float v = fabsf(__a*t + d.v_o);
+    // v_min = fminf(v, v_min);
+    // v_max = fmaxf(v, v_max);
+
+    if (a < 0.0f || b >= _pixbuf->getNumLeds()) continue;
+
+    // float h = lin_scale(v, v_min, v_max, 180.0f, 240.0f);
+    // float vv = lin_scale(v, v_min, v_max, 0.0f, 0.8f);
+
+#define BASE_COLOR_R (255.0f/255.0f)
+#define BASE_COLOR_G (132.0f/255.0f)
+#define BASE_COLOR_B (1.0f/255.0f)
+
+    _pixbuf->set_pixel_rgb_blend((int) a, BASE_COLOR_R, BASE_COLOR_G, BASE_COLOR_B, 20*dt, PixelBuffer::BlendMode::ACCUMULATE);
+    _pixbuf->set_pixel_rgb_blend((int) b, BASE_COLOR_R, BASE_COLOR_G, BASE_COLOR_B, 20*dt, PixelBuffer::BlendMode::ACCUMULATE);
+  }
+
+  while (!up_list.empty() && up_list.front().i >= _pixbuf->getNumLeds()) {
+    up_list.pop_front();
+  }
+
+
+
+  // the white starter line
+  int x = 0.8f * _pixbuf->getNumLeds();
+  for (int i = 0; i < 11; i+=2) {
+    _pixbuf->set_pixel_rgb_blend(x+i-5, 0.2f, 0.05f, 0.2f, 0.7f, PixelBuffer::BlendMode::ADD);
+    _pixbuf->set_pixel_rgb_blend(x+i-5+1, 0.4f, 0.2f, 0.4f, 0.7f, PixelBuffer::BlendMode::ADD);
   }
 }
