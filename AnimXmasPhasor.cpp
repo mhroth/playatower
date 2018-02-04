@@ -14,7 +14,7 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#import "AnimXmasPhasor.hpp"
+#include "AnimXmasPhasor.hpp"
 
 AnimXmasPhasor::AnimXmasPhasor(PixelBuffer *pixbuf) : Animation(pixbuf) {
   f_min = 1.0f/120.0f; // 1/2min

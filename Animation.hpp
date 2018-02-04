@@ -106,7 +106,7 @@ class Animation {
   /** The pixel buffer. */
   PixelBuffer *_pixbuf;
 
-  /** The total elapsed time in seconds in this aniamation. */
+  /** The total elapsed time in seconds in this animation. */
   float _t;
 
   /** A random number generator. */

@@ -14,7 +14,7 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#import "AnimAllWhite.hpp"
+#include "AnimAllWhite.hpp"
 
 AnimAllWhite::AnimAllWhite(PixelBuffer *pixbuf) : Animation(pixbuf) {}
 

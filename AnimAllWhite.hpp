@@ -17,7 +17,7 @@
 #ifndef _ANIM_ALL_WHITE_HPP_
 #define _ANIM_ALL_WHITE_HPP_
 
-#import "Animation.hpp"
+#include "Animation.hpp"
 
 class AnimAllWhite: public Animation {
  public:

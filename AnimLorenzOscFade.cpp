@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <ctime>
 
-#import "AnimLorenzOscFade.hpp"
+#include "AnimLorenzOscFade.hpp"
 
 AnimLorenzOscFade::AnimLorenzOscFade(PixelBuffer *_pixbuf) :
     Animation(_pixbuf) {

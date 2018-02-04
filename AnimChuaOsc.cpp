@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <ctime>
 
-#import "AnimChuaOsc.hpp"
+#include "AnimChuaOsc.hpp"
 
 AnimChuaOsc::AnimChuaOsc(PixelBuffer *_pixbuf) :
     Animation(_pixbuf) {

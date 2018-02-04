@@ -17,7 +17,7 @@
 #ifndef _ANIM_LORENZ_OSC_FADE_HPP_
 #define _ANIM_LORENZ_OSC_FADE_HPP_
 
-#import "Animation.hpp"
+#include "Animation.hpp"
 
 class AnimLorenzOscFade: public Animation {
  public:

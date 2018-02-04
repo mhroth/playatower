@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017, Martin Roth (mhroth@gmail.com)
+ * Copyright (c) 2018, Martin Roth (mhroth@gmail.com)
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -14,30 +14,42 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _ANIM_LORENZ_OSC_HPP_
-#define _ANIM_LORENZ_OSC_HPP_
+#ifndef _ANIM_RAIN_HPP_
+#define _ANIM_RAIN_HPP_
+
+#include <list>
 
 #include "Animation.hpp"
 
-class AnimLorenzOsc: public Animation {
+class AnimRain: public Animation {
  public:
-  AnimLorenzOsc(PixelBuffer *pixbuf);
-  ~AnimLorenzOsc();
+  AnimRain(PixelBuffer *pixbuf);
+  ~AnimRain();
 
   void setParameter(int index, float value) override;
-
   float getParameter(int index) override;
 
-  const char *getName() override { return "Lorenz Oscillator"; }
+  const char *getName() override { return "Rain"; }
 
  private:
+  typedef struct {
+    float t;   // time at which this drop was instantiated
+    float v_o; // initial velocity
+    float d;   // start point
+    int i;
+  } Drop;
+
   void _process(double dt) override;
 
-  double x, y, z, dx, dy, dz;
-  double beta, rho, sigma;
-  double min_x, max_x, min_y, max_y, min_z, max_z;
-  double max_dx, max_dy, max_dz;
-  float __rgb_sigma;
+  std::list<Drop> drop_list;
+
+  float __t_d; // time of next drop
+  float __a; // acceleration
+  std::exponential_distribution<float> __d_exp;
+  std::uniform_real_distribution<float> __d_vel;
+  std::uniform_real_distribution<float> __d_uniform;
+
+  float v_min, v_max;
 };
 
-#endif // _ANIM_LORENZ_OSC_HPP_
+#endif // _ANIM_RAIN_HPP_

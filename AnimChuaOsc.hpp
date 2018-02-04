@@ -17,7 +17,7 @@
 #ifndef _ANIM_CHUA_OSC_HPP_
 #define _ANIM_CHUA_OSC_HPP_
 
-#import "Animation.hpp"
+#include "Animation.hpp"
 
 class AnimChuaOsc: public Animation {
  public:

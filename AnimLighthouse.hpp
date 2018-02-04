@@ -17,7 +17,7 @@
 #ifndef _ANIM_LIGHTHOUSE_HPP_
 #define _ANIM_LIGHTHOUSE_HPP_
 
-#import "Animation.hpp"
+#include "Animation.hpp"
 
 class AnimLighthouse: public Animation {
  public:

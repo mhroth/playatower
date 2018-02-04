@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <ctime>
 
-#import "AnimLorenzOsc.hpp"
+#include "AnimLorenzOsc.hpp"
 
 AnimLorenzOsc::AnimLorenzOsc(PixelBuffer *pixbuf) :
     Animation(pixbuf) {

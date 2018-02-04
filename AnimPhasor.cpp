@@ -14,7 +14,7 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#import "AnimPhasor.hpp"
+#include "AnimPhasor.hpp"
 
 AnimPhasor::AnimPhasor(PixelBuffer *pixbuf) : Animation(pixbuf) {
   __f_min = 1.0f/120.0f; // 1/2min

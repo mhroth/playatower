@@ -26,7 +26,7 @@
 #include <sys/mman.h>
 #include <sys/socket.h>
 #include <time.h> // nanosleep, clock_gettime
-#include <unistd.h> // for close
+#include <unistd.h> // for close and execl
 
 #include "HvLightPipe.h"
 #include "tinyosc.h"
@@ -43,6 +43,7 @@
 #include "AnimEiffelTower.hpp"
 #include "AnimXmasPhasor.hpp"
 #include "AnimRandomFlow.hpp"
+#include "AnimRain.hpp"
 
 #define SEC_TO_NS 1000000000LL
 #define SPI_HZ 2*1000000
@@ -144,7 +145,6 @@ int main(int narg, char **argc) {
 
   const float MAX_WATTS = (narg > 4) ? atof(argc[4]) : -1.0f;
   printf("* max. watts: %0.3f\n", MAX_WATTS);
-  printf("\n");
 
   // open the SPI interface
   tspi_open(&tspi, "/dev/spidev0.0", SPI_HZ);
@@ -223,7 +223,7 @@ int main(int narg, char **argc) {
       pixbuf->clear(); // clear the pixel buffer
 
       // instantiate the next animation
-      anim_index = (anim_index+1) % 8;
+      anim_index = (anim_index+1) % 10;
       switch (anim_index) {
         default:
         case 0: anim = new AnimPhasor(pixbuf); break;
@@ -233,7 +233,9 @@ int main(int narg, char **argc) {
         case 4: anim = new AnimChuaOsc(pixbuf); break;
         case 5: anim = new AnimLighthouse(pixbuf); break;
         case 6: anim = new AnimEiffelTower(pixbuf); break;
-        case 7: anim = new AnimRandomFlow(pixbuf); break;
+        case 7: anim = new AnimRain(pixbuf); break;
+        case 8: anim = new AnimRandomFlow(pixbuf); break;
+        case 9: anim = new AnimAllWhite(pixbuf); break;
       }
 
       // FPS = anim->getPreferredFps();

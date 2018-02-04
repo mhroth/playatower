@@ -17,7 +17,7 @@
 #ifndef _ANIM_PHSAOR_HPP_
 #define _ANIM_PHSAOR_HPP_
 
-#import "Animation.hpp"
+#include "Animation.hpp"
 
 class AnimPhasor: public Animation {
  public:
