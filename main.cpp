@@ -28,7 +28,7 @@
 #include <time.h> // nanosleep, clock_gettime
 #include <unistd.h> // for close and execl
 
-#include "HvLightPipe.h"
+#include "tinypipe.h"
 #include "tinyosc.h"
 #include "tiny_spi.h"
 
@@ -44,6 +44,7 @@
 #include "AnimXmasPhasor.hpp"
 #include "AnimRandomFlow.hpp"
 #include "AnimRain.hpp"
+#include "AnimReactionDiffusion.hpp"
 
 #define SEC_TO_NS 1000000000LL
 #define SPI_HZ 2*1000000
@@ -163,8 +164,8 @@ int main(int narg, char **argc) {
   Animation *anim = new AnimPhasor(pixbuf); // initialise with default animation
 
   // start the network thread (with pipe)
-  HvLightPipe pipe;
-  hLp_init(&pipe, 4*1024); // 4KB pipe
+  TinyPipe pipe;
+  tpipe_init(&pipe, 4*1024); // 4KB pipe
   pthread_t networkThread = 0;
   pthread_create(&networkThread, NULL, &network_run, &pipe);
 
@@ -188,9 +189,9 @@ int main(int narg, char **argc) {
     lastButtonState = currentButtonState;
 
     // read messages from network
-    while (hLp_hasData(&pipe)) {
-      uint32_t numBytes = 0;
-      uint8_t *osc_buffer = hLp_getReadBuffer(&pipe, &numBytes);
+    while (tpipe_hasData(&pipe)) {
+      int numBytes = 0;
+      char *osc_buffer = tpipe_getReadBuffer(&pipe, &numBytes);
       assert(numBytes != 0);
       assert(osc_buffer != nullptr);
       tosc_message osc;
@@ -210,7 +211,7 @@ int main(int narg, char **argc) {
           anim->setParameter(index, value);
         }
       }
-      hLp_consume(&pipe); // consume the message from the pipe
+      tpipe_consume(&pipe); // consume the message from the pipe
     }
 
     // check if we need to move to the next animation
@@ -285,7 +286,7 @@ int main(int narg, char **argc) {
 
   munmap((void *) gpio, BLOCK_SIZE); // unmap the gpio memory
   pthread_join(networkThread, NULL); // wait for the network thread to stop
-  hLp_free(&pipe); // destroy the pipe from the network thread to the main thread
+  tpipe_free(&pipe); // destroy the pipe from the network thread to the main thread
   tspi_close(&tspi); // close the SPI interface
   delete anim; // delete the animation
   delete pixbuf; // delete the pixel buffer
@@ -323,10 +324,10 @@ void *network_run(void *q) {
 
       while ((len = recvfrom(fd, network_buffer, sizeof(network_buffer), 0, (struct sockaddr *) &sin, (socklen_t *) &sa_len)) > 0) {
         // put message on pipe
-        uint8_t *pipe_buffer = hLp_getWriteBuffer((HvLightPipe *) q, len);
+        char *pipe_buffer = tpipe_getWriteBuffer((TinyPipe *) q, len);
         assert(pipe_buffer != nullptr);
         memcpy(pipe_buffer, network_buffer, len);
-        hLp_produce((HvLightPipe *) q, len);
+        tpipe_produce((TinyPipe *) q, len);
       }
     }
   }
