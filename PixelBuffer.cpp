@@ -38,17 +38,16 @@ static const uint8_t APA102_GAMMA[] = {
   177,180,182,184,186,189,191,193,196,198,200,203,205,208,210,213,
   215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255 };
 
-static inline float _clamp(float x) {
-  return fminf(1.0f, fmaxf(0.0f, x));
-}
-
 PixelBuffer::PixelBuffer(uint32_t numLeds) {
   m_numLeds = numLeds;
   m_global = 1.0f;
   m_ampLimit = INFINITY;
 
   // RGB buffer. Order is global, blue, green, red (same as APA-102 datastream)
-  m_rgb = (float *) malloc(4 * m_numLeds * sizeof(float));
+  // NOTE(mhroth): prepareAndGetSpiBytes() functions on the basis of 4 0RGB pixels at a time.
+  // m_rgb must therefore be a multiple of 16 bytes (4 pixels)
+  int numRgbBytes = ((4 * m_numLeds) + 15) & ~0xF;
+  m_rgb = (float *) malloc(numRgbBytes * sizeof(float));
   assert(rgb != nullptr);
 
   // prepare SPI data
