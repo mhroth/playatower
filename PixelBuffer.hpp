@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017, Martin Roth (mhroth@gmail.com)
+ * Copyright (c) 2017-2018, Martin Roth (mhroth@gmail.com)
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -37,41 +37,55 @@ class PixelBuffer {
     SCREEN, // multiplies the background and the content then complements the result
   };
 
-  PixelBuffer(uint32_t numLeds, uint8_t global=31);
+  PixelBuffer(uint32_t numLeds);
   ~PixelBuffer();
 
   /** Returns the number of LEDs in the strip. */
-  uint32_t getNumLeds() { return numLeds; }
+  int getNumLeds() const { return m_numLeds; }
 
-  /** Returns the number of amperes currently being consumed by the LED strip. */
-  float getAmperes();
+  /**
+   * Returns the current ampere currently being consumed by the LED strip.
+   * Takes into account global brightness setting.
+   */
+  float getCurrentAmperes() const { return m_currentAmps; }
 
   /** Returns the number of watts currently being consumed by the LED strip. */
-  float getWatts() { return 5.0f*getAmperes(); }
+  float getCurrentWatts() const { return 5.0f * getCurrentAmperes(); }
 
   /** Returns the maximum number of amperes that could be consumed by the LED strip. */
-  float getMaxAmperes() { return (numLeds * 0.06f); }
+  float getMaxAmperes() const { return 0.06f * getNumLeds(); }
 
   /** Returns the maximum number of watts that could be consumed by the LED strip. */
-  float getMaxWatts() { return 5.0f*getMaxAmperes(); }
+  float getMaxWatts() const { return 5.0f*getMaxAmperes(); }
 
-  /** Set the global brightness factor. [0-31] */
-  void setGlobal(uint8_t g) { global = (g & 0x1F); }
+  /** Set the global brightness value. [0,1] */
+  void setGlobal(float g);
 
-  uint8_t getGlobal() { return global; }
+  /** Returns the current global brightness value. [0,1] */
+  float getGlobal() const { return m_global; }
+
+  /** Set the power limit. -1 for no ceiling.  */
+  void setPowerLimit(float wattLimit);
+
+  float getPowerLimit();
+
+  void setNightshift(float nightshift) { m_nightshift = nightshift; }
+
+  float getNightshift() const {return m_nightshift; }
 
   /** The number of valid bytes in the SPI buffer. */
-  uint32_t getNumSpiBytes() { return numSpiBytes; }
+  uint32_t getNumSpiBytes() const { return m_numSpiBytes; }
 
   /** The total number of bytes backing the SPI buffer. */
-  uint32_t getNumSpiBytesTotal() { return numSpiBytesTotal; }
+  uint32_t getNumSpiBytesTotal() const { return m_numSpiBytesTotal; }
 
   /**
    * Converts RGB data into a buffer suitable for sending over SPI to the LED strip.
+   * Takes into account global, nightshift, and power limit settings.
    *
-   * @param n  Nightshift factor, [0,1]. Zero is no nightshift, one is maximum nightshift.
+   * @return A pointer to the SPI buffer.
    */
-  uint8_t *getSpiBytes(float n=0.0f);
+  uint8_t *prepareAndGetSpiBytes();
 
   /**
    * Set a pixel with a given RGBA value and blend mode.
@@ -107,26 +121,33 @@ class PixelBuffer {
   void apply_gain(float f);
 
  private:
-  /** The global brightness factor. [0-31] */
-  uint8_t global;
+  /** The global brightness factor. [0,1] */
+  float m_global;
 
   /** The total number of LEDs in this animation. */
-  uint32_t numLeds;
+  int m_numLeds;
 
   /** The RGB pixel buffer. It has a format (per LED) of GLOBAL, BLUE, GREEN, RED. */
-  float *rgb;
+  float *m_rgb;
 
   /** The SPI buffer. */
-  uint8_t *spi_data;
+  uint8_t *m_spiData;
 
   /** The total number of bytes in the SPI buffer. */
-  uint32_t numSpiBytes;
+  uint32_t m_numSpiBytes;
 
   /** The number of trailer bytes in the SPI buffer. */
-  uint32_t numSpiTrailerBytes;
+  uint32_t m_numSpiTrailerBytes;
 
   /** The total length of the spi_data buffer. */
-  uint32_t numSpiBytesTotal;
+  uint32_t m_numSpiBytesTotal;
+
+  float m_ampLimit;
+
+  /** Nightshift. [0,1]. 1 is maximum nightshift. */
+  float m_nightshift;
+
+  float m_currentAmps;
 };
 
 #endif // _PIXEL_BUFER_HPP_

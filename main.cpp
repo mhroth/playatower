@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017, Martin Roth (mhroth@gmail.com)
+ * Copyright (c) 2017-2018, Martin Roth (mhroth@gmail.com)
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -140,8 +140,8 @@ int main(int narg, char **argc) {
   const uint64_t NS_FRAME = (FPS > 0.0) ? (uint64_t) (1000000000.0/FPS) : 0;
   printf("* fps: %g\n", FPS);
 
-  const uint8_t GLOBAL_BRIGHTNESS = (narg > 3) ? (atoi(argc[3]) & 0x1F) : 31;
-  printf("* global: %i/31\n", GLOBAL_BRIGHTNESS);
+  const float GLOBAL_BRIGHTNESS = (narg > 3) ? fmaxf(0.0f,fminf(1.0f,atof(argc[3]))) : 1.0f;
+  printf("* global: %0.3g (%i/31)\n", GLOBAL_BRIGHTNESS, static_cast<int>(GLOBAL_BRIGHTNESS*31.0f));
 
   const float MAX_WATTS = (narg > 4) ? atof(argc[4]) : -1.0f;
   printf("* max. watts: %0.3f\n", MAX_WATTS);
@@ -153,17 +153,14 @@ int main(int narg, char **argc) {
   gpio_open();
   INP_GPIO(GPIO_INPUT_PIN); // configure GPIO pin as input
 
-  PixelBuffer *pixbuf = new PixelBuffer(NUM_LEDS, GLOBAL_BRIGHTNESS);
+  PixelBuffer *pixbuf = new PixelBuffer(NUM_LEDS);
+  pixbuf->setGlobal(GLOBAL_BRIGHTNESS);
+  pixbuf->setPowerLimit(MAX_WATTS);
+
   printf("* SPI buffer: %i [%i] bytes\n", pixbuf->getNumSpiBytes(), pixbuf->getNumSpiBytesTotal());
   printf("\n");
 
   Animation *anim = new AnimPhasor(pixbuf); // initialise with default animation
-
-  if (MAX_WATTS > 0.0f) {
-    // if maximum watts is specified, reset global brightness so that over wattage can happen
-    uint8_t global = (uint8_t) (31.0f*MAX_WATTS/pixbuf->getMaxWatts());
-    pixbuf->setGlobal(global);
-  }
 
   // start the network thread (with pipe)
   HvLightPipe pipe;
@@ -201,9 +198,11 @@ int main(int narg, char **argc) {
         if (!strcmp(tosc_getAddress(&osc), "/next")) {
           toNextAnim = true;
         } else if (!strcmp(tosc_getAddress(&osc), "/global")) {
-          pixbuf->setGlobal((int32_t) tosc_getNextFloat(&osc));
+          pixbuf->setGlobal(tosc_getNextFloat(&osc));
         } else if (!strcmp(tosc_getAddress(&osc), "/nightshift")) {
-          nightshift = tosc_getNextFloat(&osc); // update nightshift
+          pixbuf->setNightshift(tosc_getNextFloat(&osc));
+        } else if (!strcmp(tosc_getAddress(&osc), "/powerlimit")) {
+          pixbuf->setPowerLimit(tosc_getNextFloat(&osc));
         } else if (!strncmp(tosc_getAddress(&osc), "/param/", 7)) {
           // e.g. /param/0 0.5
           int index = atoi(tosc_getAddress(&osc)+7); // parameter index >= 0
@@ -223,7 +222,7 @@ int main(int narg, char **argc) {
       pixbuf->clear(); // clear the pixel buffer
 
       // instantiate the next animation
-      anim_index = (anim_index+1) % 10;
+      anim_index = (anim_index+1) % 11;
       switch (anim_index) {
         default:
         case 0: anim = new AnimPhasor(pixbuf); break;
@@ -236,6 +235,7 @@ int main(int narg, char **argc) {
         case 7: anim = new AnimRain(pixbuf); break;
         case 8: anim = new AnimRandomFlow(pixbuf); break;
         case 9: anim = new AnimAllWhite(pixbuf); break;
+        case 10: anim = new AnimReactionDiffusion(pixbuf); break;
       }
 
       // FPS = anim->getPreferredFps();
@@ -246,7 +246,7 @@ int main(int narg, char **argc) {
     anim->process(dt);
 
     // send LED data via SPI
-    tspi_write(&tspi, pixbuf->getNumSpiBytes(), pixbuf->getSpiBytes(nightshift));
+    tspi_write(&tspi, pixbuf->getNumSpiBytes(), pixbuf->prepareAndGetSpiBytes());
 
     clock_gettime(CLOCK_REALTIME, &tock);
     timespec_subtract(&diff_tick, &tock, &tick);
@@ -269,10 +269,9 @@ int main(int narg, char **argc) {
     if (total_elapsed_ns > next_print_ns) {
       next_print_ns += SEC_TO_NS/2;
 
-      const float amps = pixbuf->getAmperes();
       printf("\r| %6.1f fps | %7.3f Watts (%4.1f%%) [%4.1f Amps] | %9i frames | %2i global | %0.3f nightshift | %.32s | [%g]",
-          1.0/dt, 5.0f*amps, 100.0f*5.0f*amps/pixbuf->getMaxWatts(), amps,
-          global_step, pixbuf->getGlobal(), nightshift, anim->getName(), anim->getParameter(0));
+          1.0/dt, pixbuf->getCurrentWatts(), 100.0f*pixbuf->getCurrentWatts()/pixbuf->getMaxWatts(), pixbuf->getCurrentAmperes(),
+          global_step, (int) (31.0f*pixbuf->getGlobal()), nightshift, anim->getName(), anim->getParameter(0));
       fflush(stdout);
     }
 
@@ -281,7 +280,7 @@ int main(int narg, char **argc) {
 
   // turn off all LEDs
   pixbuf->clear();
-  tspi_write(&tspi, pixbuf->getNumSpiBytes(), pixbuf->getSpiBytes(0.0f));
+  tspi_write(&tspi, pixbuf->getNumSpiBytes(), pixbuf->prepareAndGetSpiBytes());
 
   munmap((void *) gpio, BLOCK_SIZE); // unmap the gpio memory
   pthread_join(networkThread, NULL); // wait for the network thread to stop
@@ -313,7 +312,7 @@ void *network_run(void *q) {
     FD_SET(fd, &rfds);
 
     // wait up to X seconds for new packet
-    struct timeval tv = {0, 200000}; // sec, usec
+    struct timeval tv = {0, 300000}; // sec, usec
 
     if (select(fd+1, &rfds, NULL, NULL, &tv) > 0) {
       uint8_t network_buffer[1024]; // buffer into which network data is received
