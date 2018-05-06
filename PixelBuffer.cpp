@@ -46,8 +46,8 @@ PixelBuffer::PixelBuffer(uint32_t numLeds) {
   // RGB buffer. Order is global, blue, green, red (same as APA-102 datastream)
   // NOTE(mhroth): prepareAndGetSpiBytes() functions on the basis of 4 0RGB pixels at a time.
   // m_rgb must therefore be a multiple of 16 bytes (4 pixels)
-  int numRgbBytes = ((4 * m_numLeds) + 15) & ~0xF;
-  m_rgb = (float *) malloc(numRgbBytes * sizeof(float));
+  m_numRgbBytesTotal = ((4 * m_numLeds) + 15) & ~0xF;
+  m_rgb = (float *) malloc(m_numRgbBytesTotal * sizeof(float));
   assert(rgb != nullptr);
 
   // prepare SPI data
@@ -73,7 +73,7 @@ PixelBuffer::~PixelBuffer() {
 
 void PixelBuffer::clear() {
   // reset RGB buffer
-  memset(m_rgb, 0, 4*m_numLeds*sizeof(float));
+  memset(m_rgb, 0, m_numRgbBytesTotal*sizeof(float));
 
   // reset SPI buffer
   memset(m_spiData, 0, m_numSpiBytesTotal); // leading zeros
@@ -198,13 +198,20 @@ uint8_t *PixelBuffer::prepareAndGetSpiBytes() {
   // adjust global brightness if we are over the power limit
   if (m_currentAmps > m_ampLimit) {
     int8_t gf = static_cast<int8_t>(31.0f * m_global * m_ampLimit / m_currentAmps);
+    m_currentAmps = gf * m_currentAmps / (31.0f * m_global);
+
     gf -= static_cast<int8_t>(G);
+
     // go through the whole SPI buffer and update with the new global
     int8x16_t GF = (int8x16_t) {gf,0,0,0,gf,0,0,0,gf,0,0,0,gf,0,0,0};
     for (int i = 0, j = 0; i < m_numLeds; i+=4, j+=16) {
       int8_t *const data = (int8_t *) (m_spiData + 4 + j);
       vst1q_s8(data, vaddq_s8(vld1q_s8(data), GF));
     }
+
+    m_isPowerSuppressionEngaged = true;
+  } else {
+    m_isPowerSuppressionEngaged = false;
   }
 
   // clear trailing bytes, as above loop may have overwriten some

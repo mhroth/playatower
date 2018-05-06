@@ -269,9 +269,10 @@ int main(int narg, char **argc) {
     if (total_elapsed_ns > next_print_ns) {
       next_print_ns += SEC_TO_NS/2;
 
-      printf("\r| %6.1f fps | %7.3f Watts (%4.1f%%) [%4.1f Amps] | %9i frames | %2i global | %0.3f nightshift | %.32s | [%g]",
+      printf("\r| %6.1f fps | %7.3f Watts (%4.1f%%) [%4.1f Amps] | %9i frames | %2i global [%s] | %0.3f nightshift | %.32s | [%g]",
           1.0/dt, pixbuf->getCurrentWatts(), 100.0f*pixbuf->getCurrentWatts()/pixbuf->getMaxWatts(), pixbuf->getCurrentAmperes(),
-          global_step, (int) (31.0f*pixbuf->getGlobal()), nightshift, anim->getName(), anim->getParameter(0));
+          global_step, (int) (31.0f*pixbuf->getGlobal()), pixbuf->isPowerSuppressionEngaged() ? "x" : " ",
+          nightshift, anim->getName(), anim->getParameter(0));
       fflush(stdout);
     }
 

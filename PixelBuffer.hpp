@@ -120,6 +120,8 @@ class PixelBuffer {
   /** Multiply all RGB elements by f. */
   void apply_gain(float f);
 
+  bool isPowerSuppressionEngaged() const { return m_isPowerSuppressionEngaged; }
+
  private:
   /** The global brightness factor. [0,1] */
   float m_global;
@@ -129,6 +131,9 @@ class PixelBuffer {
 
   /** The RGB pixel buffer. It has a format (per LED) of GLOBAL, BLUE, GREEN, RED. */
   float *m_rgb;
+
+  /** The total length of the m_rgb buffer. */
+  int m_numRgbBytesTotal;
 
   /** The SPI buffer. */
   uint8_t *m_spiData;
@@ -148,6 +153,8 @@ class PixelBuffer {
   float m_nightshift;
 
   float m_currentAmps;
+
+  bool m_isPowerSuppressionEngaged;
 };
 
 #endif // _PIXEL_BUFER_HPP_
