@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017, Martin Roth (mhroth@gmail.com)
+ * Copyright (c) 2017-2018, Martin Roth (mhroth@gmail.com)
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -14,8 +14,8 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _ANIM_PHSAOR_HPP_
-#define _ANIM_PHSAOR_HPP_
+#ifndef _ANIM_PHASOR_HPP_
+#define _ANIM_PHASOR_HPP_
 
 #include "Animation.hpp"
 
@@ -41,4 +41,4 @@ class AnimPhasor: public Animation {
   std::exponential_distribution<float> __d_exp;
 };
 
-#endif // _ANIM_PHSAOR_HPP_
+#endif // _ANIM_PHASOR_HPP_
