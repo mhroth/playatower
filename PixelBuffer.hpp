@@ -71,7 +71,7 @@ class PixelBuffer {
 
   void setNightshift(float nightshift) { m_nightshift = nightshift; }
 
-  float getNightshift() const {return m_nightshift; }
+  float getNightshift() const { return m_nightshift; }
 
   /** The number of valid bytes in the SPI buffer. */
   uint32_t getNumSpiBytes() const { return m_numSpiBytes; }

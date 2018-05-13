@@ -43,12 +43,12 @@ PixelBuffer::PixelBuffer(uint32_t numLeds) {
   m_global = 1.0f;
   m_ampLimit = INFINITY;
 
-  // RGB buffer. Order is global, blue, green, red (same as APA-102 datastream)
-  // NOTE(mhroth): prepareAndGetSpiBytes() functions on the basis of 4 0RGB pixels at a time.
-  // m_rgb must therefore be a multiple of 16 bytes (4 pixels)
-  m_numRgbBytesTotal = ((4 * m_numLeds) + 15) & ~0xF;
-  m_rgb = (float *) malloc(m_numRgbBytesTotal * sizeof(float));
-  assert(rgb != nullptr);
+  // RGB buffer. Order is global, blue, green, red (same as APA-102 datastream). 4xfloat = 16 bytes per pixel
+  // NOTE(mhroth): prepareAndGetSpiBytes() functions on the basis of 4 ARGB pixels at a time.
+  // m_rgb must therefore be a multiple of 4*16 bytes (4 pixels) == 64 bytes
+  m_numRgbBytesTotal = ((4 * m_numLeds * sizeof(float)) + 63) & ~0x3F;
+  m_rgb = (float *) malloc(m_numRgbBytesTotal);
+  assert(m_rgb != nullptr);
 
   // prepare SPI data
   // https://cpldcpu.com/2014/11/30/understanding-the-apa102-superled/
@@ -59,7 +59,7 @@ PixelBuffer::PixelBuffer(uint32_t numLeds) {
   m_numSpiBytes = 4 + (4*m_numLeds) + m_numSpiTrailerBytes;
   // ensure that it is the next largest multiple-of-16 (if necessary)
   m_numSpiBytesTotal = (m_numSpiBytes + 15) & ~0xF;
-  m_spiData = (uint8_t *) malloc(m_numSpiBytesTotal * sizeof(uint8_t));
+  m_spiData = (uint8_t *) malloc(m_numSpiBytesTotal);
   assert(m_spiData != nullptr);
 
   // reset all buffers
@@ -73,7 +73,7 @@ PixelBuffer::~PixelBuffer() {
 
 void PixelBuffer::clear() {
   // reset RGB buffer
-  memset(m_rgb, 0, m_numRgbBytesTotal*sizeof(float));
+  memset(m_rgb, 0, m_numRgbBytesTotal);
 
   // reset SPI buffer
   memset(m_spiData, 0, m_numSpiBytesTotal); // leading zeros
@@ -222,6 +222,13 @@ uint8_t *PixelBuffer::prepareAndGetSpiBytes() {
 
 void PixelBuffer::set_pixel_rgb_blend(int i, float r, float g, float b, float a, BlendMode mode) {
   assert(i >= 0 && i < m_numLeds);
+
+  // NOTE(mhroth): WTD isfinite() doesn't seem to trigger on obviously NaN values???
+  assert(isfinite(r) && "r is NaN.");
+  assert(isfinite(g) && "g is NaN.");
+  assert(isfinite(b) && "b is NaN.");
+  assert(isfinite(a) && "a is NaN.");
+
   const int j = 4 * i;
 
   switch (mode) {

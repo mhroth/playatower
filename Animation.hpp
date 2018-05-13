@@ -67,11 +67,8 @@ class Animation {
    */
   virtual double getPreferredFps() { return -1.0; }
 
- protected:
-  virtual void _process(double dt) = 0;
-
   /** Linear scaling. */
-  double lin_scale(double x, double min_in, double max_in, double min_out, double max_out);
+  double lin_scale(double x, double min_in, double max_in, double min_out=0.0, double max_out=1.0);
 
   /**
    * Scales an input on range [0,1] logarithmicly between two values.
@@ -81,6 +78,9 @@ class Animation {
    * @param max_log  log10 of maximum value
    */
   float log_scale(float x, float min_log, float max_log);
+
+ protected:
+  virtual void _process(double dt) = 0;
 
   /**
    * Gaussian distribution.

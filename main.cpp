@@ -45,6 +45,7 @@
 #include "AnimRandomFlow.hpp"
 #include "AnimRain.hpp"
 #include "AnimReactionDiffusion.hpp"
+#include "AnimLorenzPhasor.hpp"
 
 #define SEC_TO_NS 1000000000LL
 #define SPI_HZ 2*1000000
@@ -116,6 +117,17 @@ void gpio_open() {
 // declare the network run function
 static void *network_run(void *q);
 
+/**
+ * The main function has a number of commandline arguments, including:
+ *
+ * number of LEDs: > 0
+ * FPS: -1 if unlimited
+ * Global Brightness: [0,1]
+ * Power Limit: -1 if unlimited
+ *
+ * e.g. 300 LEDs, maximum framerate, full brightness, limited to 50 watts
+ * ./playatower 300 -1 1 50
+ */
 int main(int narg, char **argc) {
 
   TinySpi tspi;
@@ -169,9 +181,6 @@ int main(int narg, char **argc) {
   pthread_t networkThread = 0;
   pthread_create(&networkThread, NULL, &network_run, &pipe);
 
-  // default to no nightshift
-  float nightshift = 0.0f;
-
   int lastButtonState = 1; // GPIO pin is high when *not* connected
   uint32_t anim_index = 0;
   bool toNextAnim = false;
@@ -223,7 +232,7 @@ int main(int narg, char **argc) {
       pixbuf->clear(); // clear the pixel buffer
 
       // instantiate the next animation
-      anim_index = (anim_index+1) % 11;
+      anim_index = (anim_index+1) % 12;
       switch (anim_index) {
         default:
         case 0: anim = new AnimPhasor(pixbuf); break;
@@ -237,6 +246,7 @@ int main(int narg, char **argc) {
         case 8: anim = new AnimRandomFlow(pixbuf); break;
         case 9: anim = new AnimAllWhite(pixbuf); break;
         case 10: anim = new AnimReactionDiffusion(pixbuf); break;
+        case 11: anim = new AnimLorenzPhasor(pixbuf); break;
       }
 
       // FPS = anim->getPreferredFps();
@@ -270,10 +280,10 @@ int main(int narg, char **argc) {
     if (total_elapsed_ns > next_print_ns) {
       next_print_ns += SEC_TO_NS/2;
 
-      printf("\r| %6.1f fps | %7.3f Watts (%4.1f%%) [%4.1f Amps] | %9i frames | %2i global [%s] | %0.3f nightshift | %.32s | [%g]",
+      printf("\r| %6.1f fps | %7.3f Watts (%4.1f%%) [%4.1f Amps] | %9i frames | %0.3f global [%s] | %0.3f nightshift | %.32s | [%g]",
           1.0/dt, pixbuf->getCurrentWatts(), 100.0f*pixbuf->getCurrentWatts()/pixbuf->getMaxWatts(), pixbuf->getCurrentAmperes(),
-          global_step, (int) (31.0f*pixbuf->getGlobal()), pixbuf->isPowerSuppressionEngaged() ? "x" : " ",
-          nightshift, anim->getName(), anim->getParameter(0));
+          global_step, pixbuf->getGlobal(), pixbuf->isPowerSuppressionEngaged() ? "x" : " ",
+          pixbuf->getNightshift(), anim->getName(), anim->getParameter(0));
       fflush(stdout);
     }
 
@@ -299,7 +309,7 @@ void *network_run(void *q) {
 
   // open receive socket
   int fd = socket(AF_INET, SOCK_DGRAM, 0);
-  assert(fd > 0);
+  assert((fd > 0) && "Could not open network socket.");
   fcntl(fd, F_SETFL, O_NONBLOCK); // set the socket to non-blocking
   struct sockaddr_in sin;
   sin.sin_family = AF_INET;
