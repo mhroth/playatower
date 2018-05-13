@@ -21,12 +21,14 @@
 
 class LorenzOscillator {
  public:
-  LorenzOscillator(double sigma, double rho, double beta, double x, double y, double z);
+  LorenzOscillator(double sigma, double rho, double beta, double x=0.0, double y=0.0, double z=0.0);
   ~LorenzOscillator();
 
-  void setSigma(float sigma) { m_sigma = sigma; }
-  void setRho(float rho) { m_rho = rho; }
-  void setBeta(float beta) { m_beta = beta; }
+  void setPosition(double x, double y, double z) { m_x = x; m_y = y; m_z = z; }
+
+  void setSigma(double sigma) { m_sigma = sigma; }
+  void setRho(double rho) { m_rho = rho; }
+  void setBeta(double beta) { m_beta = beta; }
 
   double getSigma() const { return m_sigma; }
   double getRho() const { return m_rho; }

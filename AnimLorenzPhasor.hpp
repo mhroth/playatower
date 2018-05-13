@@ -37,9 +37,9 @@ class AnimLorenzPhasor: public Animation {
 
   std::vector<LorenzOscillator> m_oscList;
 
-  std::normal_distribution<double> m_normal;
+  std::uniform_real_distribution<double> m_normal;
 
-  double m_k;
+  double m_tSwitch;
 };
 
 #endif // _ANIM_LORENZ_PHASOR_HPP_

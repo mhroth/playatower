@@ -18,31 +18,50 @@
 
 #include "AnimLorenzPhasor.hpp"
 
+#define RESET_PERIOD_SEC 20
+#define FADE_PERIOD_SEC 1
+
 AnimLorenzPhasor::AnimLorenzPhasor(PixelBuffer *pixbuf) : Animation(pixbuf) {
   m_oscList.reserve(_pixbuf->getNumLeds());
   for (int i = 0; i < _pixbuf->getNumLeds(); i++) {
-    m_oscList.push_back(LorenzOscillator(10.0, 28, 8.0/3.0, 1.0+0.01*i, 0.0, 0.0));
+    m_oscList.push_back(LorenzOscillator(10.0, 28, 8.0/3.0));
   }
 
-  m_normal = std::normal_distribution<double>(0.0, 1.0);
+  m_normal = std::uniform_real_distribution<double>(0.0, 1.0);
 
-  m_k = 0.0;
+  m_tSwitch = 0.0;
 }
 
 AnimLorenzPhasor::~AnimLorenzPhasor() {}
 
 void AnimLorenzPhasor::setParameter(int index, float value) {
-  m_k = 1000.0f * value;
   for (auto& osc : m_oscList) {
     // TODO:(mhroth)?
   }
 }
 
 float AnimLorenzPhasor::getParameter(int index) {
-  return m_k;
+  return 0.0f;
 }
 
 void AnimLorenzPhasor::_process(double dt) {
+  if (m_tSwitch <= _t) {
+    m_tSwitch += RESET_PERIOD_SEC;
+
+    // determine new direction
+    double az = 2.0 * M_PI * m_normal(_gen);
+    double el = (M_PI * m_normal(_gen)) - M_PI_2;
+
+    double x = cos(el) * cos(az);
+    double y = cos(el) * sin(az);
+    double z = sin(el);
+
+    for (int i = 0; i < m_oscList.size(); i++) {
+      double r = 1.0 + 0.01*i;
+      m_oscList[i].setPosition(r*x, r*y, r*z);
+    }
+  }
+
   const int NUM_LEDS = _pixbuf->getNumLeds();
   double x, y, z;
   double dx, dy, dz;
@@ -61,4 +80,14 @@ void AnimLorenzPhasor::_process(double dt) {
 
     _pixbuf->set_pixel_rgb_blend(i, x, y, z);
   }
+
+  double tt = m_tSwitch - _t;
+  double gain = 1.0;
+  if (tt < FADE_PERIOD_SEC) {
+    gain = sin(M_PI_2*(tt/FADE_PERIOD_SEC)); // fade out
+  } else if (tt > (RESET_PERIOD_SEC-FADE_PERIOD_SEC)) {
+    gain = sin(M_PI_2*(RESET_PERIOD_SEC - tt)/FADE_PERIOD_SEC); // fade in
+  }
+  _pixbuf->apply_gain(gain);
+
 }

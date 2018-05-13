@@ -24,8 +24,6 @@ LorenzOscillator::LorenzOscillator(double sigma, double rho, double beta, double
   m_dx = 0.0; m_dy = 0.0; m_dz = 0.0;
   m_minX = INFINITY; m_minY = INFINITY; m_minZ = INFINITY;
   m_maxX = -INFINITY; m_maxY = -INFINITY; m_maxZ = -INFINITY;
-
-  m_k = 0.0;
 }
 
 LorenzOscillator::~LorenzOscillator() {}
