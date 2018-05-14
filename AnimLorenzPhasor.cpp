@@ -58,8 +58,19 @@ void AnimLorenzPhasor::_process(double dt) {
     double y = cos(el) * sin(az);
     double z = sin(el);
 
+    // double rho = m_oscList[0].getRho();
+    // double beta = m_oscList[0].getBeta();
+    // double sigma = m_oscList[0].getSigma();
+    //
+    // // determine attractor point
+    // double xa = sqrt(beta * (rho  -1.0));
+    // double ya = sqrt(beta * (rho - 1.0));
+    // double za = rho - 1.0;
+
+    double r = log_scale(m_normal(_gen), 0, 1);
     for (int i = 0; i < m_oscList.size(); i++) {
-      double r = 1.0 + 0.01*i;
+      r += 0.15;
+      // m_oscList[i].setPosition(r*x + xa, r*y  + ya, r*z  + za);
       m_oscList[i].setPosition(r*x, r*y, r*z);
     }
 
