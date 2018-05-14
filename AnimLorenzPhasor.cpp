@@ -18,7 +18,7 @@
 
 #include "AnimLorenzPhasor.hpp"
 
-#define RESET_PERIOD_SEC 20
+#define RESET_PERIOD_SEC 60
 #define FADE_PERIOD_SEC 1
 
 AnimLorenzPhasor::AnimLorenzPhasor(PixelBuffer *pixbuf) : Animation(pixbuf) {
@@ -28,20 +28,22 @@ AnimLorenzPhasor::AnimLorenzPhasor(PixelBuffer *pixbuf) : Animation(pixbuf) {
   }
 
   m_normal = std::uniform_real_distribution<double>(0.0, 1.0);
-
   m_tSwitch = 0.0;
+  m_timeDilation = 0.5f;
+
+  m_minGlobalX = INFINITY; m_maxGlobalX = -INFINITY;
+  m_minGlobalY = INFINITY; m_maxGlobalY = -INFINITY;
+  m_minGlobalZ = INFINITY; m_maxGlobalZ = -INFINITY;
 }
 
 AnimLorenzPhasor::~AnimLorenzPhasor() {}
 
 void AnimLorenzPhasor::setParameter(int index, float value) {
-  for (auto& osc : m_oscList) {
-    // TODO:(mhroth)?
-  }
+  m_timeDilation = log_scale(value, -1.0f, 1.0f);
 }
 
 float AnimLorenzPhasor::getParameter(int index) {
-  return 0.0f;
+  return m_timeDilation;
 }
 
 void AnimLorenzPhasor::_process(double dt) {
@@ -60,11 +62,19 @@ void AnimLorenzPhasor::_process(double dt) {
       double r = 1.0 + 0.01*i;
       m_oscList[i].setPosition(r*x, r*y, r*z);
     }
+
+    m_lowColour =  m_normal(_gen) * 360;
+
+    // reset osc limits
+    m_minGlobalX = INFINITY; m_maxGlobalX = -INFINITY;
+    m_minGlobalY = INFINITY; m_maxGlobalY = -INFINITY;
+    m_minGlobalZ = INFINITY; m_maxGlobalZ = -INFINITY;
   }
+
+  dt *= m_timeDilation;
 
   const int NUM_LEDS = _pixbuf->getNumLeds();
   double x, y, z;
-  double dx, dy, dz;
   double minX, maxX, minY, maxY, minZ, maxZ;
   for (int i = 0; i < NUM_LEDS; i++) {
     m_oscList[i].process(dt, &x, &y, &z);
@@ -72,22 +82,23 @@ void AnimLorenzPhasor::_process(double dt) {
     m_oscList[i].getRangeY(&minY, &maxY);
     m_oscList[i].getRangeZ(&minZ, &maxZ);
 
-    m_oscList[i].getVelocity(&dx, &dy, &dz);
+    m_minGlobalX = fmin(m_minGlobalX, minX); m_maxGlobalX = fmax(m_maxGlobalX, maxX);
+    m_minGlobalY = fmin(m_minGlobalY, minY); m_maxGlobalY = fmax(m_maxGlobalY, maxY);
+    m_minGlobalZ = fmin(m_minGlobalZ, minZ); m_maxGlobalZ = fmax(m_maxGlobalZ, maxZ);
 
-    x = lin_scale(x, 0.99*minX, 1.01*maxX); // constants are to prevent case of minX == maxX
-    y = lin_scale(y, 0.99*minY, 1.01*maxY);
-    z = lin_scale(z, 0.99*minZ, 1.01*maxZ);
-
-    _pixbuf->set_pixel_rgb_blend(i, x, y, z);
+    // NOTE:(mhroth) constants are to prevent case of minX == maxX
+    x = lin_scale(x, 0.99*m_minGlobalX, 1.01*m_maxGlobalX, m_lowColour, m_lowColour+60);
+    y = lin_scale(y, 0.99*m_minGlobalY, 1.01*m_maxGlobalY);
+    z = lin_scale(z, 0.99*m_minGlobalZ, 1.01*m_maxGlobalZ);
+    _pixbuf->set_pixel_hsl_blend(i, x, y, z);
   }
 
   double tt = m_tSwitch - _t;
-  double gain = 1.0;
   if (tt < FADE_PERIOD_SEC) {
-    gain = sin(M_PI_2*(tt/FADE_PERIOD_SEC)); // fade out
+    double gain = sin(M_PI_2*(tt/FADE_PERIOD_SEC)); // fade out
+    _pixbuf->apply_gain(gain);
   } else if (tt > (RESET_PERIOD_SEC-FADE_PERIOD_SEC)) {
-    gain = sin(M_PI_2*(RESET_PERIOD_SEC - tt)/FADE_PERIOD_SEC); // fade in
+    double gain = sin(M_PI_2*(RESET_PERIOD_SEC - tt)/FADE_PERIOD_SEC); // fade in
+    _pixbuf->apply_gain(gain);
   }
-  _pixbuf->apply_gain(gain);
-
 }
