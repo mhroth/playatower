@@ -131,8 +131,9 @@ static void *network_run(void *q);
 int main(int narg, char **argc) {
 
   TinySpi tspi;
-  struct timespec tick, tock, diff_tick;
+  struct timespec tick_start, tick, tock, diff_tick;
   uint32_t global_step = 0; // the current frame index
+  float total_energy = 0.0f; // the total energy (joules) used since the beginning
   uint64_t total_elapsed_ns = 0;
   uint64_t next_print_ns = 0;
 
@@ -184,6 +185,9 @@ int main(int narg, char **argc) {
   int lastButtonState = 1; // GPIO pin is high when *not* connected
   uint32_t anim_index = 0;
   bool toNextAnim = false;
+
+  // record the start of the program
+  clock_gettime(CLOCK_REALTIME, &tick_start);
 
   double dt = 0.0;
   while (_keepRunning) {
@@ -259,6 +263,9 @@ int main(int narg, char **argc) {
     // send LED data via SPI
     tspi_write(&tspi, pixbuf->getNumSpiBytes(), pixbuf->prepareAndGetSpiBytes());
 
+    // keep track of total energy use
+    total_energy += pixbuf->getCurrentWatts() * dt;
+
     clock_gettime(CLOCK_REALTIME, &tock);
     timespec_subtract(&diff_tick, &tock, &tick);
     const uint64_t elapsed_ns = (((uint64_t) diff_tick.tv_sec) * SEC_TO_NS) + (uint64_t) diff_tick.tv_nsec;
@@ -280,9 +287,13 @@ int main(int narg, char **argc) {
     if (total_elapsed_ns > next_print_ns) {
       next_print_ns += SEC_TO_NS/2;
 
-      printf("\r| %6.1f fps | %7.3f Watts (%4.1f%%) [%4.1f Amps] | %9i frames | %0.3f global [%s] | %0.3f nightshift | %.32s | [%g]",
+      // calculate total runtime
+      timespec_subtract(&diff_tick, &tock, &tick_start);
+      float total_watt_hours = total_energy/3600.0f;
+
+      printf("\r| %6.1f fps | %7.3f Watts (%4.1f%%) [%4.1f Amps] | %8.2fWh total | %9i frames | %0.3f global [%s] | %0.3f nightshift | %.32s | [%g]",
           1.0/dt, pixbuf->getCurrentWatts(), 100.0f*pixbuf->getCurrentWatts()/pixbuf->getMaxWatts(), pixbuf->getCurrentAmperes(),
-          global_step, pixbuf->getGlobal(), pixbuf->isPowerSuppressionEngaged() ? "x" : " ",
+          total_watt_hours, global_step, pixbuf->getGlobal(), pixbuf->isPowerSuppressionEngaged() ? "x" : " ",
           pixbuf->getNightshift(), anim->getName(), anim->getParameter(0));
       fflush(stdout);
     }
