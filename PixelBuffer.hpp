@@ -91,9 +91,9 @@ class PixelBuffer {
    * Set a pixel with a given RGBA value and blend mode.
    *
    * @param i  Pixel index.
-   * @param r  Red channel value.
-   * @param g  Green channel value.
-   * @param b  Blue channel value.
+   * @param r  Red channel value. [0,1]
+   * @param g  Green channel value. [0,1]
+   * @param b  Blue channel value. [0,1]
    * @param a  Alpha value. Defaults to 1. [0,1]
    * @param mode  Blend mode to combine the new and existing colors. Default to BlendMode::SET.
    */
@@ -103,13 +103,26 @@ class PixelBuffer {
    * Set a pixel with a given HSLA value and blend mode. See @set_pixel_rgb_blend.
    *
    * @param i  Pixel index.
-   * @param h  Hue channel value.
-   * @param s  Saturation channel value.
-   * @param l  Luminosity channel value.
+   * @param h  Hue channel value. [0,360]
+   * @param s  Saturation channel value. [0,1]
+   * @param l  Luminosity channel value. [0,1]
    * @param a  Alpha value. Defaults to 1. [0,1]
    * @param mode  Blend mode to combine the new and existing colors. Default to BlendMode::SET.
    */
   void set_pixel_hsl_blend(int i, float h, float s, float l, float a=1.0f, BlendMode mode=BlendMode::SET);
+
+  /**
+   * Set a pixel with a given HSLA value and blend mode. See @set_pixel_rgb_blend.
+   * Uses the mhroth method of converting from HSLA to RGBA.
+   *
+   * @param i  Pixel index.
+   * @param h  Hue channel value. [0,360]
+   * @param s  Saturation channel value. [0,1]
+   * @param l  Luminosity channel value. [0,1]
+   * @param a  Alpha value. Defaults to 1. [0,1]
+   * @param mode  Blend mode to combine the new and existing colors. Default to BlendMode::SET.
+   */
+  void set_pixel_mhroth_hsl_blend(int i, float h, float s, float l, float a=1.0f, BlendMode mode=BlendMode::SET);
 
   /** Clear the buffer, set all values to 0. */
   void clear();

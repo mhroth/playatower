@@ -29,7 +29,7 @@ AnimLorenzPhasor::AnimLorenzPhasor(PixelBuffer *pixbuf) : Animation(pixbuf) {
 
   m_normal = std::uniform_real_distribution<double>(0.0, 1.0);
   m_tSwitch = 0.0;
-  m_timeDilation = 0.5f;
+  m_timeDilation = 0.43f;
 
   m_minGlobalX = INFINITY; m_maxGlobalX = -INFINITY;
   m_minGlobalY = INFINITY; m_maxGlobalY = -INFINITY;
@@ -67,10 +67,9 @@ void AnimLorenzPhasor::_process(double dt) {
     // double ya = sqrt(beta * (rho - 1.0));
     // double za = rho - 1.0;
 
-    double r = log_scale(m_normal(_gen), 0, 1);
+    double r = 1;
     for (int i = 0; i < m_oscList.size(); i++) {
       r += 0.15;
-      // m_oscList[i].setPosition(r*x + xa, r*y  + ya, r*z  + za);
       m_oscList[i].setPosition(r*x, r*y, r*z);
     }
 
@@ -98,10 +97,14 @@ void AnimLorenzPhasor::_process(double dt) {
     m_minGlobalZ = fmin(m_minGlobalZ, minZ); m_maxGlobalZ = fmax(m_maxGlobalZ, maxZ);
 
     // NOTE:(mhroth) constants are to prevent case of minX == maxX
-    x = lin_scale(x, 0.99*m_minGlobalX, 1.01*m_maxGlobalX, m_lowColour, m_lowColour+60);
+    // x = lin_scale(x, 0.99*m_minGlobalX, 1.01*m_maxGlobalX, m_lowColour, m_lowColour+60);
+    x = lin_scale(x, 0.99*m_minGlobalX, 1.01*m_maxGlobalX);
+    x = lin_scale(x*x*x, 0, 1, m_lowColour, m_lowColour+90);
     y = lin_scale(y, 0.99*m_minGlobalY, 1.01*m_maxGlobalY);
     z = lin_scale(z, 0.99*m_minGlobalZ, 1.01*m_maxGlobalZ);
-    _pixbuf->set_pixel_hsl_blend(i, x, y, z);
+
+    // _pixbuf->set_pixel_hsl_blend(i, x, y, z);
+    _pixbuf->set_pixel_mhroth_hsl_blend(i, x, y, z);
   }
 
   double tt = m_tSwitch - _t;

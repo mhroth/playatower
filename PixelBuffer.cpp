@@ -290,3 +290,48 @@ void PixelBuffer::set_pixel_hsl_blend(int i, float h, float s, float l, float a,
 
   set_pixel_rgb_blend(i, r, g, b, a, mode);
 }
+
+void PixelBuffer::set_pixel_mhroth_hsl_blend(int i, float h, float s, float l, float a, BlendMode mode) {
+  // wrap hue around [-180,180]
+  if (h < -180.0f) h += 360.0f;
+  else if (h > 180.0f) h -= 360.0f;
+  s = fmaxf(0.0f, fminf(1.0f, s));
+  l = fmaxf(0.0f, fminf(1.0f, l));
+
+  // rescale hue, saturation, and lightness
+  h *= 0.017453292519943f; // M_PI/180.0f;
+  l *= 1.732050807568877f; // sqrtf(3.0f);
+  s *= 0.866025403784439f; // sqrtf(3.0f)/2.0f;
+
+  const float c = cosf(h);
+  float x = s * c;
+  float y = s * sqrtf(1.0f-c*c);
+  float z = l;
+
+  // float theta_x = M_PI_2 - atan2f(sqrtf(2.0f), 1.0f);
+  // const float cx = 0.816496580927726f; // cosf(theta_x);
+  // const float sx = 0.577350269189626f; // sinf(theta_x);
+  // float theta_y = M_PI/4.0f;
+  // const float cy = 0.707106781186548f; // cosf(theta_y);
+  // const float sy = 0.707106781186548f; // sinf(theta_y);
+
+  // float r = cy*x - sy*sx*y + sy*cx*z;
+  // float g = cx*y + sx*z;
+  // float b = -sy*x - cy*sx*y + cy*cx*z;
+  // float r = 0.707106781186548f*x - 0.408248290463863f*y + 0.577350269189626f*z;
+  // float g = 0.816496580927726f*y + 0.577350269189626f*z;
+  // float b = -0.707106781186548f*x - 0.408248290463863f*y + 0.577350269189626f*z;
+  x *= 0.707106781186548f;
+  y *= 0.408248290463863f;
+  z *= 0.577350269189626f;
+  float r = z - y + x;
+  float g = z + 2.0f*y;
+  float b = z - y - x;
+
+  // clamp result
+  r = fmaxf(0.0f, fminf(1.0f, r));
+  g = fmaxf(0.0f, fminf(1.0f, g));
+  b = fmaxf(0.0f, fminf(1.0f, b));
+
+  set_pixel_rgb_blend(i, r, g, b, a, mode);
+}
