@@ -298,14 +298,30 @@ void PixelBuffer::set_pixel_mhroth_hsl_blend(int i, float h, float s, float l, f
   s = fmaxf(0.0f, fminf(1.0f, s));
   l = fmaxf(0.0f, fminf(1.0f, l));
 
+#define M_PI_3 1.047197551196598f // 60 deg
+#define M_PI_2_3 2.094395102393195f // 120 deg
+#define L_HEIGHT 0.408248290463863f // (SQRT_2/2)*tan(30deg)
+
   // rescale hue, saturation, and lightness
   h *= 0.017453292519943f; // M_PI/180.0f;
   l *= 1.732050807568877f; // sqrtf(3.0f);
   s *= 0.866025403784439f; // sqrtf(3.0f)/2.0f;
 
-  const float c = cosf(h);
-  float x = s * c;
-  float y = s * sqrtf(1.0f-c*c);
+  // ensure that saturation stays within the cube
+  if (l < 0.577350269189626f) { // sqrt(3)/3
+    float hl = h; // +/- 60deg
+    while (hl < -M_PI_3) hl += M_PI_2_3;
+    while (hl > M_PI_3) hl -= M_PI_2_3;
+    s = fminf(s, (l/0.577350269189626f)*L_HEIGHT/cosf(hl));
+  } else if (l > 1.154700538379252f) { // 2*sqrt(3)/3
+    float hl = h;
+    while (hl < -M_PI_3) hl += M_PI_2_3;
+    while (hl > M_PI_3) hl -= M_PI_2_3;
+    s = fminf(s, ((1.732050807568877f-l)/0.577350269189626f)*L_HEIGHT/cosf(hl));
+  }
+
+  float x = s * cosf(h);
+  float y = s * sinf(h);
   float z = l;
 
   // float theta_x = M_PI_2 - atan2f(sqrtf(2.0f), 1.0f);

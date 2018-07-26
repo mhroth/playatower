@@ -77,6 +77,7 @@ int tspi_write(TinySpi *tspi, int num_bytes, uint8_t *data) {
   assert(data != NULL);
 
   // https://raspberrypi.stackexchange.com/questions/65595/spi-transfer-fails-with-buffer-size-greater-than-4096
+  // To change the default add spidev.bufsiz=65536 to /boot/cmdline.txt and reboot.
   assert((num_bytes < 4096) && "SPI transfer size is too large.");
 
   struct spi_ioc_transfer spi;

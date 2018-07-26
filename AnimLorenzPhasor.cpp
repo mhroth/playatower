@@ -88,18 +88,14 @@ void AnimLorenzPhasor::_process(double dt) {
   double minX, maxX, minY, maxY, minZ, maxZ;
   for (int i = 0; i < NUM_LEDS; i++) {
     m_oscList[i].process(dt, &x, &y, &z);
-    m_oscList[i].getRangeX(&minX, &maxX);
-    m_oscList[i].getRangeY(&minY, &maxY);
-    m_oscList[i].getRangeZ(&minZ, &maxZ);
 
-    m_minGlobalX = fmin(m_minGlobalX, minX); m_maxGlobalX = fmax(m_maxGlobalX, maxX);
-    m_minGlobalY = fmin(m_minGlobalY, minY); m_maxGlobalY = fmax(m_maxGlobalY, maxY);
-    m_minGlobalZ = fmin(m_minGlobalZ, minZ); m_maxGlobalZ = fmax(m_maxGlobalZ, maxZ);
+    m_minGlobalX = fmin(m_minGlobalX, x); m_maxGlobalX = fmax(m_maxGlobalX, x);
+    m_minGlobalY = fmin(m_minGlobalY, y); m_maxGlobalY = fmax(m_maxGlobalY, y);
+    m_minGlobalZ = fmin(m_minGlobalZ, z); m_maxGlobalZ = fmax(m_maxGlobalZ, z);
 
     // NOTE:(mhroth) constants are to prevent case of minX == maxX
     // x = lin_scale(x, 0.99*m_minGlobalX, 1.01*m_maxGlobalX, m_lowColour, m_lowColour+60);
-    x = lin_scale(x, 0.99*m_minGlobalX, 1.01*m_maxGlobalX);
-    x = lin_scale(x*x*x, 0, 1, m_lowColour, m_lowColour+90);
+    x = lin_scale(x, 0.99*m_minGlobalX, 1.01*m_maxGlobalX, m_lowColour, m_lowColour+90);
     y = lin_scale(y, 0.99*m_minGlobalY, 1.01*m_maxGlobalY);
     z = lin_scale(z, 0.99*m_minGlobalZ, 1.01*m_maxGlobalZ);
 

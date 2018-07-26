@@ -48,7 +48,7 @@
 #include "AnimLorenzPhasor.hpp"
 
 #define SEC_TO_NS 1000000000LL
-#define SPI_HZ 2*1000000
+#define SPI_HZ 9000000
 #define GPIO_INPUT_PIN 2
 
 
@@ -106,7 +106,7 @@ void gpio_open() {
   close(fd); // No need to keep fd open after mmap
 
   if (gpio_map == MAP_FAILED) {
-    printf("mmap error %d\n", (int)gpio_map); // errno also set!
+    printf("mmap error %d\n", (int) gpio_map); // errno also set!
     exit(-1);
   }
 
@@ -182,7 +182,7 @@ int main(int narg, char **argc) {
   pthread_t networkThread = 0;
   pthread_create(&networkThread, NULL, &network_run, &pipe);
 
-  int lastButtonState = 1; // GPIO pin is high when *not* connected
+  int lastButtonState = (1<<GPIO_INPUT_PIN); // GPIO pin is high when *not* connected
   uint32_t anim_index = 0;
   bool toNextAnim = false;
 
@@ -236,21 +236,20 @@ int main(int narg, char **argc) {
       pixbuf->clear(); // clear the pixel buffer
 
       // instantiate the next animation
-      anim_index = (anim_index+1) % 12;
+      anim_index = (anim_index+1) % 8;
       switch (anim_index) {
         default:
         case 0: anim = new AnimPhasor(pixbuf); break;
-        case 1: anim = new AnimXmasPhasor(pixbuf); break;
-        case 2: anim = new AnimLorenzOsc(pixbuf); break;
-        case 3: anim = new AnimLorenzOscFade(pixbuf); break;
-        case 4: anim = new AnimChuaOsc(pixbuf); break;
-        case 5: anim = new AnimLighthouse(pixbuf); break;
-        case 6: anim = new AnimEiffelTower(pixbuf); break;
-        case 7: anim = new AnimRain(pixbuf); break;
-        case 8: anim = new AnimRandomFlow(pixbuf); break;
-        case 9: anim = new AnimAllWhite(pixbuf); break;
-        case 10: anim = new AnimReactionDiffusion(pixbuf); break;
-        case 11: anim = new AnimLorenzPhasor(pixbuf); break;
+        case 1: anim = new AnimLorenzOsc(pixbuf); break;
+        case 2: anim = new AnimLorenzOscFade(pixbuf); break;
+        case 3: anim = new AnimChuaOsc(pixbuf); break;
+        case 4: anim = new AnimLighthouse(pixbuf); break;
+        case 5: anim = new AnimEiffelTower(pixbuf); break;
+        case 6: anim = new AnimAllWhite(pixbuf); break;
+        case 7: anim = new AnimLorenzPhasor(pixbuf); break;
+        // case 6: anim = new AnimRain(pixbuf); break;
+        // case 7: anim = new AnimRandomFlow(pixbuf); break;
+        // case 9: anim = new AnimReactionDiffusion(pixbuf); break;
       }
 
       // FPS = anim->getPreferredFps();
