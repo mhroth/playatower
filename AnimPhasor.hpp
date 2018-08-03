@@ -32,13 +32,20 @@ class AnimPhasor: public Animation {
  private:
   void _process(double dt) override;
 
-  void updateTarget(float value);
+  float mt_o; // time of last change
+  float mt_c; // time of next change
 
-  float __t_o; // time of last change
-  float __t_c; // time of next change
-  float __f_min, __f_target, __f_prev_target;
-  std::uniform_real_distribution<float> __d_uniform;
-  std::exponential_distribution<float> __d_exp;
+  std::uniform_real_distribution<float> md_uniform;
+
+  float mFMin;
+  float mFMaxNext;
+  float mFMaxPrev;
+
+  float mHuePrev;
+  float mHueNext;
+  float mHueOffset;
+
+  float* mPhase;
 };
 
 #endif // _ANIM_PHASOR_HPP_

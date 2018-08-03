@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017, Martin Roth (mhroth@gmail.com)
+ * Copyright (c) 2017-2018, Martin Roth (mhroth@gmail.com)
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -17,59 +17,70 @@
 #include "AnimPhasor.hpp"
 
 AnimPhasor::AnimPhasor(PixelBuffer *pixbuf) : Animation(pixbuf) {
-  __f_min = 1.0f/120.0f; // 1/2min
-  __f_target = 1.0f/2.0f;
-  __f_prev_target = __f_target;
-  __t_o = 0.0f;
+  mFMin = 1.0f/120.0f; // 1/2min
+  mFMaxNext = 1.0f/60.0f; // 1/1min
+  mFMaxPrev = mFMaxNext;
+  mt_o = 0.0f;
 
-  __d_uniform = std::uniform_real_distribution<float>(0.0f, 1.0f);
-  __d_exp = std::exponential_distribution<float>(1.0f/(5.0f*60.0f)); // 5 minutes
-  __t_c = 30.0f; // first change always happens after 30 seconds
+  md_uniform = std::uniform_real_distribution<float>(0.0f, 1.0f);
+  mt_c = 12.0f; // first change always happens after 30 seconds
+
+  mHueNext = 360.0f * md_uniform(_gen);
+  mHuePrev = mHueNext;
+
+  mHueOffset = 220.0f;
+
+  mPhase = (float *) malloc(pixbuf->getNumLeds() * sizeof(float));
+  memset(mPhase, 0, pixbuf->getNumLeds() * sizeof(float));
 }
 
-AnimPhasor::~AnimPhasor() {}
-
-void AnimPhasor::updateTarget(float value) {
-  __f_prev_target = lin_scale(1.0f/(1.0f+expf(-(_t-__t_o-6.0f))),
-      0, 1, __f_prev_target, __f_target);
-
-  __t_o = _t;
-  __f_target = log_scale(value, log10f(__f_min), log10f(2.0f));
+AnimPhasor::~AnimPhasor() {
+  free(mPhase);
 }
 
 void AnimPhasor::setParameter(int index, float value) {
   switch (index) {
-    case 0: updateTarget(value); break;
+    case 0: mHueOffset = 360.0f * value; break;
     default: break;
   }
 }
 
 float AnimPhasor::getParameter(int index) {
   switch (index) {
-    case 0: return __f_target;
+    case 0: return mHueOffset;
     default: return -1.0f;
   }
+  return 0.0f;
 }
 
 void AnimPhasor::_process(double dt) {
-  if (__t_c <= _t) {
-    updateTarget(__d_uniform(_gen));
-    __t_c = _t + __d_exp(_gen);
+  if (mt_c <= _t) {
+    mFMaxPrev = mFMaxNext;
+    mFMaxNext = 1.0f / (9.0f*md_uniform(_gen) + 1.0f);
+    mFMaxNext *= (md_uniform(_gen) > 0.5f) ? 1.0f : -1.0f;
+
+    mHuePrev = mHueNext;
+    mHueNext = 360.0f * md_uniform(_gen);
+
+    mt_o = _t;
+    mt_c = _t + 12.0;
   }
 
-  float x = 1.0f/(1.0f+expf(-(_t-__t_o-6.0f))); // sigmoid function, [0,1]
-  float f_z = lin_scale(1.0f/(1.0f+expf(-(_t-__t_o-6.0f))),
-      0, 1, __f_prev_target, __f_target);
+  float x = 1.0f/(1.0f+expf(-(_t-mt_o-6.0f))); // sigmoid function, [0,1]
+
+  float fMax = lin_scale(x, 0, 1, mFMaxPrev, mFMaxNext);
+  float hue = lin_scale(x, 0, 1, mHuePrev, mHueNext);
 
   const int N = _pixbuf->getNumLeds();
   const float n = (float) N;
   for (int i = 0; i < N; ++i) {
-    float f = lin_scale(i, 0, n, __f_min, f_z);
-    float y = fabsf(sinf(2.0f * M_PI * f * _t));
-    if (y < 0.5f) {
-      _pixbuf->set_pixel_rgb_blend(i, 0.0f*y/255.0f, 191.0f*y/255.0f, 255.0f*y/255.0f);
+    float f = lin_scale(i, 0, n, mFMin, fMax);
+    mPhase[i] += f * dt;
+    float y = fabsf(sinf(2.0f * M_PI * mPhase[i]));
+    if (y >= 0.5f) {
+      _pixbuf->set_pixel_mhroth_hsl_blend(i, hue, 0.9f, 0.8f*y);
     } else {
-      _pixbuf->set_pixel_rgb_blend(i, y*153.0f/255.0f, y*50.0f/255.0f, y*204.0f/255.0f);
+      _pixbuf->set_pixel_mhroth_hsl_blend(i, hue+mHueOffset, 0.9f, 0.8f*y);
     }
   }
 }
