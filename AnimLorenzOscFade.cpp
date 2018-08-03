@@ -112,13 +112,15 @@ void AnimLorenzOscFade::_process(double dt) {
 
   int i_r = lin_scale(x, min_x, max_x, 0, N-1);
   double l_x = lin_scale(fabs(dx), 0.0, max_dx, 0.05, c_l);
-  _pixbuf->set_pixel_hsl_blend(i_r, c_h, c_s, l_x, alpha_mult*dt, PixelBuffer::BlendMode::ACCUMULATE);
+  // set_pixel_hsl_blend
+  // set_pixel_mhroth_hsl_blend
+  _pixbuf->set_pixel_mhroth_hsl_blend(i_r, c_h, c_s, l_x, alpha_mult*dt, PixelBuffer::BlendMode::ACCUMULATE);
 
   int i_g = lin_scale(y, min_y, max_y, 0, N-1);
   double l_y = lin_scale(fabs(dy), 0.0, max_dy, 0.05, c_l);
-  _pixbuf->set_pixel_hsl_blend(i_g, c_h+a, c_s, l_y, alpha_mult*dt, PixelBuffer::BlendMode::ACCUMULATE);
+  _pixbuf->set_pixel_mhroth_hsl_blend(i_g, c_h+a, c_s, l_y, alpha_mult*dt, PixelBuffer::BlendMode::ACCUMULATE);
 
   int i_b = lin_scale(z, min_z, max_z, 0, N-1);
   double l_z = lin_scale(fabs(dz), 0.0, max_dz, 0.05, c_l);
-  _pixbuf->set_pixel_hsl_blend(i_b, c_h-a, c_s, l_z, alpha_mult*dt, PixelBuffer::BlendMode::ACCUMULATE);
+  _pixbuf->set_pixel_mhroth_hsl_blend(i_b, c_h-a, c_s, l_z, alpha_mult*dt, PixelBuffer::BlendMode::ACCUMULATE);
 }

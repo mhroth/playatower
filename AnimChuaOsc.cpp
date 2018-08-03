@@ -96,13 +96,15 @@ void AnimChuaOsc::_process(double dt) {
 
   int i_r = lin_scale(x, min_x, max_x, 0, N-1);
   double l_x = lin_scale(fabs(dx), 0.0, __dx_range, 0.01, 0.55+0.1);
-  _pixbuf->set_pixel_hsl_blend(i_r, __base_hue, 0.69f, l_x, 200.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
+  // set_pixel_hsl_blend
+  // set_pixel_mhroth_hsl_blend
+  _pixbuf->set_pixel_mhroth_hsl_blend(i_r, __base_hue, 0.69f, l_x, 200.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
 
   int i_g = lin_scale(y, min_y, max_y, 0, N-1);
   double l_y = lin_scale(fabs(dy), 0.0, __dy_range, 0.01, 0.48+0.1);
-  _pixbuf->set_pixel_hsl_blend(i_g, __base_hue+30.0f, 0.36f, l_y, 200.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
+  _pixbuf->set_pixel_mhroth_hsl_blend(i_g, __base_hue+30.0f, 0.36f, l_y, 200.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
 
   int i_b = lin_scale(z, min_z, max_z, 0, N-1);
   double l_z = lin_scale(fabs(dz), 0.0, __dz_range, 0.01, 0.48+0.1);
-  _pixbuf->set_pixel_hsl_blend(i_b, __base_hue-30.0f, 0.9f, l_z, 200.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
+  _pixbuf->set_pixel_mhroth_hsl_blend(i_b, __base_hue-30.0f, 0.9f, l_z, 200.0f*dt, PixelBuffer::BlendMode::ACCUMULATE);
 }
