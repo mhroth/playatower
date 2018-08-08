@@ -77,10 +77,7 @@ void AnimPhasor::_process(double dt) {
     float f = lin_scale(i, 0, n, mFMin, fMax);
     mPhase[i] += f * dt;
     float y = fabsf(sinf(2.0f * M_PI * mPhase[i]));
-    if (y >= 0.5f) {
-      _pixbuf->set_pixel_mhroth_hsl_blend(i, hue, 0.9f, 0.8f*y);
-    } else {
-      _pixbuf->set_pixel_mhroth_hsl_blend(i, hue+mHueOffset, 0.9f, 0.8f*y);
-    }
+    float h = (y >= 0.5f) ? hue : hue+mHueOffset;
+    _pixbuf->set_pixel_mhroth_hsl_blend(i, h, 0.9f, 0.8f*y);
   }
 }
