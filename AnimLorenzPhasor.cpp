@@ -27,7 +27,7 @@ AnimLorenzPhasor::AnimLorenzPhasor(PixelBuffer *pixbuf) : Animation(pixbuf) {
     m_oscList.push_back(LorenzOscillator(10.0, 28, 8.0/3.0));
   }
 
-  m_normal = std::uniform_real_distribution<double>(0.0, 1.0);
+  m_uniform = std::uniform_real_distribution<double>(0.0, 1.0);
   m_tSwitch = 0.0;
   m_timeDilation = 0.43f;
 
@@ -51,8 +51,8 @@ void AnimLorenzPhasor::_process(double dt) {
     m_tSwitch += RESET_PERIOD_SEC;
 
     // determine new direction
-    double az = 2.0 * M_PI * m_normal(_gen);
-    double el = (M_PI * m_normal(_gen)) - M_PI_2;
+    double az = 2.0 * M_PI * m_uniform(_gen);
+    double el = (M_PI * m_uniform(_gen)) - M_PI_2;
 
     double x = cos(el) * cos(az);
     double y = cos(el) * sin(az);
@@ -67,18 +67,27 @@ void AnimLorenzPhasor::_process(double dt) {
     // double ya = sqrt(beta * (rho - 1.0));
     // double za = rho - 1.0;
 
-    double r = 1;
-    for (int i = 0; i < m_oscList.size(); i++) {
-      r += 0.15;
+    double r = 1.0; // r ranges from [1,3]
+    const int N = m_oscList.size();
+    for (int i = 0; i < N; i++) {
+      r += 2.0/N;
       m_oscList[i].setPosition(r*x, r*y, r*z);
     }
 
-    m_lowColour =  m_normal(_gen) * 360;
+    m_lowColour =  m_uniform(_gen) * 360;
+
+    printf("\n");
+    printf("x: [%0.3f, %0.3f]\n", m_minGlobalX, m_maxGlobalX);
+    printf("y: [%0.3f, %0.3f]\n", m_minGlobalY, m_maxGlobalY);
+    printf("z: [%0.3f, %0.3f]\n", m_minGlobalZ, m_maxGlobalZ);
 
     // reset osc limits
-    m_minGlobalX = INFINITY; m_maxGlobalX = -INFINITY;
-    m_minGlobalY = INFINITY; m_maxGlobalY = -INFINITY;
-    m_minGlobalZ = INFINITY; m_maxGlobalZ = -INFINITY;
+    // m_minGlobalX = INFINITY; m_maxGlobalX = -INFINITY;
+    // m_minGlobalY = INFINITY; m_maxGlobalY = -INFINITY;
+    // m_minGlobalZ = INFINITY; m_maxGlobalZ = -INFINITY;
+    m_minGlobalX = -21.0; m_maxGlobalX = 21.0; // a good guess on the limits
+    m_minGlobalY = -29.0; m_maxGlobalY = 29.0;
+    m_minGlobalZ = -2.0; m_maxGlobalZ = 50.0;
   }
 
   dt *= m_timeDilation;
@@ -99,16 +108,15 @@ void AnimLorenzPhasor::_process(double dt) {
     y = lin_scale(y, 0.99*m_minGlobalY, 1.01*m_maxGlobalY);
     z = lin_scale(z, 0.99*m_minGlobalZ, 1.01*m_maxGlobalZ);
 
-    // _pixbuf->set_pixel_hsl_blend(i, x, y, z);
     _pixbuf->set_pixel_mhroth_hsl_blend(i, x, y, z);
   }
 
   double tt = m_tSwitch - _t;
   if (tt < FADE_PERIOD_SEC) {
-    double gain = sin(M_PI_2*(tt/FADE_PERIOD_SEC)); // fade out
+    float gain = sinf(M_PI_2*(tt/FADE_PERIOD_SEC)); // fade out
     _pixbuf->apply_gain(gain);
   } else if (tt > (RESET_PERIOD_SEC-FADE_PERIOD_SEC)) {
-    double gain = sin(M_PI_2*(RESET_PERIOD_SEC - tt)/FADE_PERIOD_SEC); // fade in
+    float gain = sinf(M_PI_2*(RESET_PERIOD_SEC - tt)/FADE_PERIOD_SEC); // fade in
     _pixbuf->apply_gain(gain);
   }
 }

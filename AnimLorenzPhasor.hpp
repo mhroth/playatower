@@ -37,13 +37,15 @@ class AnimLorenzPhasor: public Animation {
 
   std::vector<LorenzOscillator> m_oscList;
 
-  std::uniform_real_distribution<double> m_normal;
+  std::uniform_real_distribution<double> m_uniform;
 
   double m_tSwitch;
   float m_lowColour;
   float m_timeDilation;
 
-  double m_minGlobalX, m_maxGlobalX, m_minGlobalY, m_maxGlobalY, m_minGlobalZ, m_maxGlobalZ;
+  double m_minGlobalX, m_maxGlobalX;
+  double m_minGlobalY, m_maxGlobalY;
+  double m_minGlobalZ, m_maxGlobalZ;
 };
 
 #endif // _ANIM_LORENZ_PHASOR_HPP_
