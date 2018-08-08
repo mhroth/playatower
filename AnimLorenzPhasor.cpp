@@ -31,9 +31,12 @@ AnimLorenzPhasor::AnimLorenzPhasor(PixelBuffer *pixbuf) : Animation(pixbuf) {
   m_tSwitch = 0.0;
   m_timeDilation = 0.43f;
 
-  m_minGlobalX = INFINITY; m_maxGlobalX = -INFINITY;
-  m_minGlobalY = INFINITY; m_maxGlobalY = -INFINITY;
-  m_minGlobalZ = INFINITY; m_maxGlobalZ = -INFINITY;
+  // m_minGlobalX = INFINITY; m_maxGlobalX = -INFINITY;
+  // m_minGlobalY = INFINITY; m_maxGlobalY = -INFINITY;
+  // m_minGlobalZ = INFINITY; m_maxGlobalZ = -INFINITY;
+  m_minGlobalX = -21.0; m_maxGlobalX = 21.0; // a good guess on the limits
+  m_minGlobalY = -30.0; m_maxGlobalY = 30.0;
+  m_minGlobalZ = -3.0; m_maxGlobalZ = 50.0;
 }
 
 AnimLorenzPhasor::~AnimLorenzPhasor() {}
@@ -85,9 +88,6 @@ void AnimLorenzPhasor::_process(double dt) {
     // m_minGlobalX = INFINITY; m_maxGlobalX = -INFINITY;
     // m_minGlobalY = INFINITY; m_maxGlobalY = -INFINITY;
     // m_minGlobalZ = INFINITY; m_maxGlobalZ = -INFINITY;
-    m_minGlobalX = -21.0; m_maxGlobalX = 21.0; // a good guess on the limits
-    m_minGlobalY = -29.0; m_maxGlobalY = 29.0;
-    m_minGlobalZ = -2.0; m_maxGlobalZ = 50.0;
   }
 
   dt *= m_timeDilation;
@@ -104,9 +104,12 @@ void AnimLorenzPhasor::_process(double dt) {
 
     // NOTE:(mhroth) constants are to prevent case of minX == maxX
     // x = lin_scale(x, 0.99*m_minGlobalX, 1.01*m_maxGlobalX, m_lowColour, m_lowColour+60);
-    x = lin_scale(x, 0.99*m_minGlobalX, 1.01*m_maxGlobalX, m_lowColour, m_lowColour+90);
-    y = lin_scale(y, 0.99*m_minGlobalY, 1.01*m_maxGlobalY);
-    z = lin_scale(z, 0.99*m_minGlobalZ, 1.01*m_maxGlobalZ);
+    // x = lin_scale(x, 0.99*m_minGlobalX, 1.01*m_maxGlobalX, m_lowColour, m_lowColour+90);
+    // y = lin_scale(y, 0.99*m_minGlobalY, 1.01*m_maxGlobalY);
+    // z = lin_scale(z, 0.99*m_minGlobalZ, 1.01*m_maxGlobalZ);
+    x = lin_scale(x, m_minGlobalX, m_maxGlobalX, m_lowColour, m_lowColour+90);
+    y = lin_scale(y, m_minGlobalY, m_maxGlobalY);
+    z = lin_scale(z, m_minGlobalZ, m_maxGlobalZ);
 
     _pixbuf->set_pixel_mhroth_hsl_blend(i, x, y, z);
   }
