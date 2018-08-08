@@ -18,7 +18,7 @@
 
 #include "AnimLorenzPhasor.hpp"
 
-#define RESET_PERIOD_SEC 60
+#define RESET_PERIOD_SEC 75
 #define FADE_PERIOD_SEC 1
 
 AnimLorenzPhasor::AnimLorenzPhasor(PixelBuffer *pixbuf) : Animation(pixbuf) {
