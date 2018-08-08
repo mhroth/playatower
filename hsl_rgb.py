@@ -17,24 +17,6 @@ args = parser.parse_args()
 def clamp(x):
     return min(1, max(0, x))
 
-# l = (args.r + args.g + args.b)/math.sqrt(3)
-# s = math.sqrt(max(args.r**2 + args.g**2 + args.b**2 - l**2, 0))
-#
-# lr = (1 + 0 + 0)/math.sqrt(3) # hue is relative to RED (1,0,0) direction
-# hr = (1-lr/math.sqrt(3), 0-lr/math.sqrt(3), 0-lr/math.sqrt(3))
-#
-# hv = (args.r-l/math.sqrt(3), args.g-l/math.sqrt(3), args.b-l/math.sqrt(3))
-# abs_hv = math.sqrt(hv[0]**2 + hv[1]**2 + hv[2]**2)
-# abs_hv = abs_hv if abs_hv > 0 else 1 # just in case l == 0
-# abs_hr = math.sqrt(hr[0]**2 + hr[1]**2 + hr[2]**2)
-# cos_h = (hv[0]*hr[0] + hv[1]*hr[1] + hv[2]*hr[2])/abs_hv/abs_hr
-# h = math.acos(min(1, max(-1, cos_h)))
-#
-# # used to determine direction of angle
-# hd = (hr[0]-hv[0], hr[1]-hv[1], hr[2]-hv[2])
-# if hd[1] >= 0.0 and hd[2] < 0.0:
-#     h += math.pi
-
 # Y then X
 theta_y = -math.pi/4
 cy = math.cos(theta_y)
@@ -49,9 +31,6 @@ hz = -cx*sy*args.r - sx*args.g + cx*cy*args.b
 h = math.atan2(hy, hx)
 s = math.sqrt(hx**2 + hy**2)
 l = hz
-
-# if h < 0:
-#     h += math.pi
 
 # print("hx:{0} hy:{1} hz:{2}".format(hx, hy, hz))
 # print("h:{0} s:{1} l:{2}".format(h, s, l))
