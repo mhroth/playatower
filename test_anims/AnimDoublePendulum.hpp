@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017, Martin Roth (mhroth@gmail.com)
+ * Copyright (c) 2018, Martin Roth (mhroth@gmail.com)
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -14,26 +14,23 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _ANIM_RANDOM_FLOW_HPP_
-#define _ANIM_RANDOM_FLOW_HPP_
+#ifndef _ANIM_DOUBLE_PENDULUM_HPP_
+#define _ANIM_DOUBLE_PENDULUM_HPP_
 
-#import "Animation.hpp"
+#include "Animation.hpp"
 
-class AnimRandomFlow: public Animation {
+// https://en.wikipedia.org/wiki/Double_pendulum
+class AnimDoublePendulum: public Animation {
  public:
-  AnimRandomFlow(PixelBuffer *pixbuf);
-  ~AnimRandomFlow();
+  AnimDoublePendulum(PixelBuffer *pixbuf);
+  ~AnimDoublePendulum();
 
-  const char *getName() override { return "Random Flow"; }
+  void setParameter(int index, float value) override;
+
+  const char *getName() override { return "Double Pendulum"; }
 
  private:
   void _process(double dt) override;
-
-  void __normalise(float *b, int n);
-
-  std::vector<float> __state;
-  std::vector<float> __kernel;
-  std::uniform_real_distribution<float> __d_uniform;
 };
 
-#endif // _ANIM_RANDOM_FLOW_HPP_
+#endif // _ANIM_DOUBLE_PENDULUM_HPP_

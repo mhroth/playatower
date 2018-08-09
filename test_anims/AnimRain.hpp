@@ -33,7 +33,7 @@ class AnimRain: public Animation {
 
  private:
   typedef struct {
-    float t;   // time at which this drop was instantiated
+    double t;   // time at which this drop was instantiated
     float v_o; // initial velocity
     int i;
   } Drop;

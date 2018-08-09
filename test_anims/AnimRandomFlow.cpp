@@ -20,6 +20,7 @@ AnimRandomFlow::AnimRandomFlow(PixelBuffer *pixbuf) : Animation(pixbuf) {
   __state.resize(3*pixbuf->getNumLeds());
   __kernel.resize(9);
   __d_uniform = std::uniform_real_distribution<float>(0.0f, 1.0f);
+  __d_gauss = std::normal_distribution<float>(-0.05f, 5.0f);
 
   for (int i = 0; i < __state.size(); i++) {
     __state[i] = __d_uniform(_gen);
@@ -35,6 +36,8 @@ AnimRandomFlow::AnimRandomFlow(PixelBuffer *pixbuf) : Animation(pixbuf) {
   __kernel[7] = 0.4f;
   __kernel[8] = 0.2f;
   __normalise(__kernel.data(), __kernel.size());
+
+  _pixbuf->fill_rgb(1.0f, 1.0f, 1.0f);
 }
 
 AnimRandomFlow::~AnimRandomFlow() {}
@@ -46,25 +49,11 @@ void AnimRandomFlow::__normalise(float *b, int n) {
 }
 
 void AnimRandomFlow::_process(double dt) {
-  for (int i = 0; i < __state.size(); i++) {
-    __state[i] = __d_uniform(_gen);
-  }
-
   const int N = _pixbuf->getNumLeds();
-  for (int i = 5; i < N-5; ++i) {
-    float r = 0.0f;
-    float g = 0.0f;
-    float b = 0.0f;
-    // for (int j = 0; j < __kernel.size(); ++j) {
-    //   r += __state[i-4+j]*__kernel[j];
-    //   g += __state[i-4+j+N]*__kernel[j];
-    //   b += __state[i-4+j+N+N]*__kernel[j];
-    // }
-
-    r = __state[i];
-    g = __state[i+N];
-    b = __state[i+N+N];
-
-    _pixbuf->set_pixel_rgb_blend(i, r, g, b);
+  for (int i = 0; i < N; ++i) {
+    float r = __d_gauss(_gen);
+    float g = __d_gauss(_gen);
+    float b = __d_gauss(_gen);
+    _pixbuf->set_pixel_rgb_blend(i, r, g, b, dt, PixelBuffer::BlendMode::ACCUMULATE);
   }
 }
