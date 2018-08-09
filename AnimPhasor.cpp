@@ -78,6 +78,6 @@ void AnimPhasor::_process(double dt) {
     mPhase[i] += f * dt;
     float y = fabsf(sinf(2.0f * M_PI * mPhase[i]));
     float h = (y >= 0.5f) ? hue : hue+mHueOffset;
-    _pixbuf->set_pixel_mhroth_hsl_blend(i, h, 0.9f, 0.8f*y);
+    _pixbuf->set_pixel_mhroth_hsl_blend(i, h, 0.8f, 0.8f*y);
   }
 }
