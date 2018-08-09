@@ -66,7 +66,7 @@ struct tm* Animation::getDatetimeUtc() {
     mSecondsAccumulator = static_cast<double>(mCurrentDatetime.tm_sec);
     mDatetimeTimestamp = _t;
   } else {
-    if mSecondsAccumulator >= 60.0) {
+    if (mSecondsAccumulator >= 60.0) {
       mDatetimeTimestamp = -INFINITY;
       return getDatetimeUtc();
     }
