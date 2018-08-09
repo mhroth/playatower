@@ -41,9 +41,6 @@
 #include "AnimAllWhite.hpp"
 #include "AnimLighthouse.hpp"
 #include "AnimEiffelTower.hpp"
-#include "AnimXmasPhasor.hpp"
-#include "AnimRandomFlow.hpp"
-#include "AnimRain.hpp"
 #include "AnimLorenzPhasor.hpp"
 
 #define SEC_TO_NS 1000000000LL
