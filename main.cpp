@@ -187,12 +187,12 @@ int main(int narg, char **argc) {
   bool toNextAnim = false;
 
   // record the start of the program
-  clock_gettime(CLOCK_REALTIME, &tick_start);
+  clock_gettime(CLOCK_MONOTONIC, &tick_start);
 
   double dt = 0.0;
   while (_keepRunning) {
 
-    clock_gettime(CLOCK_REALTIME, &tick);
+    clock_gettime(CLOCK_MONOTONIC, &tick);
 
     // check the state of the button
     int currentButtonState = GET_GPIO(GPIO_INPUT_PIN);
@@ -265,7 +265,7 @@ int main(int narg, char **argc) {
     // keep track of total energy use
     total_energy += pixbuf->getCurrentWatts() * dt;
 
-    clock_gettime(CLOCK_REALTIME, &tock);
+    clock_gettime(CLOCK_MONOTONIC, &tock);
     timespec_subtract(&diff_tick, &tock, &tick);
     const uint64_t elapsed_ns = (((uint64_t) diff_tick.tv_sec) * SEC_TO_NS) + (uint64_t) diff_tick.tv_nsec;
     if (elapsed_ns < NS_FRAME) {
