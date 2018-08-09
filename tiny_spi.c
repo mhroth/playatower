@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017, Martin Roth (mhroth@gmail.com)
+ * Copyright (c) 2017-2018, Martin Roth (mhroth@gmail.com)
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -44,19 +44,19 @@ int tspi_open(TinySpi *tspi, const char *path, uint32_t spi_speed) {
   uint8_t spi_mode = 0;
   ret = ioctl(fd, SPI_IOC_WR_MODE, &spi_mode); // set write mode
   assert((ret == 0) && "Write mode could not be set.");
-  ret = ioctl(fd, SPI_IOC_RD_MODE, &spi_mode); // set read mode
-  assert((ret == 0) && "Read mode could not be set.");
+  // ret = ioctl(fd, SPI_IOC_RD_MODE, &spi_mode); // set read mode
+  // assert((ret == 0) && "Read mode could not be set.");
 
   uint8_t spi_bitsPerWord = 8;
   ret = ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &spi_bitsPerWord);
   assert((ret == 0) && "Bits per word could not be set.");
-  ret = ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &spi_bitsPerWord);
-  assert((ret == 0) && "Bits per word could not be set.");
+  // ret = ioctl(fd, SPI_IOC_RD_BITS_PER_WORD, &spi_bitsPerWord);
+  // assert((ret == 0) && "Bits per word could not be set.");
 
   ret = ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, &spi_speed);
   assert((ret == 0) && "Write speed could not be set.");
-  ret = ioctl(fd, SPI_IOC_RD_MAX_SPEED_HZ, &spi_speed);
-  assert((ret == 0) && "Write speed could not be set.");
+  // ret = ioctl(fd, SPI_IOC_RD_MAX_SPEED_HZ, &spi_speed);
+  // assert((ret == 0) && "Write speed could not be set.");
 
   tspi->fd = fd;
   tspi->speed = spi_speed;
