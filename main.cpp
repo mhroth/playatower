@@ -44,7 +44,6 @@
 #include "AnimXmasPhasor.hpp"
 #include "AnimRandomFlow.hpp"
 #include "AnimRain.hpp"
-#include "AnimReactionDiffusion.hpp"
 #include "AnimLorenzPhasor.hpp"
 
 #define SEC_TO_NS 1000000000LL
