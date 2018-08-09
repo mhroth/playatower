@@ -14,12 +14,20 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <chrono>
+
 #include "Animation.hpp"
 
 Animation::Animation(PixelBuffer *pixbuf) :
     _pixbuf(pixbuf), _step(0), _t(0.0) {
   assert(pixbuf != nullptr);
   _gen = std::default_random_engine(std::chrono::system_clock::now().time_since_epoch().count());
+
+  _t = 0.0;
+
+  // initialise datetime
+  mDatetimeTimestamp = -INFINITY;
+  getDatetimeUtc();
 }
 
 double Animation::lin_scale(double x, double min_in, double max_in, double min_out, double max_out) {
@@ -45,7 +53,23 @@ float Animation::pdf_logNormal(float x, float mu, float sigma) {
 }
 
 void Animation::process(double dt) {
+  mSecondsAccumulator += dt;
   _t += dt; // keep track of global animation time
   _process(dt);
   ++_step; // keep track of number of elapsed frames
+}
+
+struct tm* Animation::getDatetimeUtc() {
+  if (_t > mDatetimeTimestamp + 60.0) {
+    time_t t = time(NULL);
+    mCurrentDatetime = *localtime(&t);
+    mSecondsAccumulator = static_cast<double>(mCurrentDatetime.tm_sec);
+    mDatetimeTimestamp = _t;
+  } else {
+    if mSecondsAccumulator >= 60.0) {
+      mDatetimeTimestamp = -INFINITY;
+      return getDatetimeUtc();
+    }
+  }
+  return &mCurrentDatetime;
 }

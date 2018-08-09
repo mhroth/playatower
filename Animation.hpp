@@ -23,8 +23,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
-#include <chrono>
 #include <random>
 
 #include "PixelBuffer.hpp"
@@ -82,6 +82,9 @@ class Animation {
  protected:
   virtual void _process(double dt) = 0;
 
+  /** Returns the current system datetime. */
+  struct tm* getDatetimeUtc();
+
   /**
    * Gaussian distribution.
    * https://en.wikipedia.org/wiki/Normal_distribution
@@ -107,10 +110,15 @@ class Animation {
   PixelBuffer *_pixbuf;
 
   /** The total elapsed time in seconds in this animation. */
-  float _t;
+  double _t;
 
   /** A random number generator. */
   std::default_random_engine _gen;
+
+ private:
+  struct tm mCurrentDatetime; // current datetime
+  double mSecondsAccumulator; // current estimated second of datetime (as update function is not called )
+  double mDatetimeTimestamp;  // last time that localtime() was called
 };
 
 #endif // _ANIMATION_HPP_

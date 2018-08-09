@@ -52,7 +52,17 @@ float AnimEiffelTower::getParameter(int index) {
 }
 
 void AnimEiffelTower::_process(double dt) {
-  float p_flash = 1.0f - expf(-dt/__mean_flash_time);
+  float meanFlashTime = __mean_flash_time; // default
+  struct tm* datetime = getDatetimeUtc();
+  switch (datetime->tm_min) {
+    case 0: meanFlashTime = 0.2f; break;
+    case 15: meanFlashTime = 2.0f; break;
+    case 30: meanFlashTime = 1.0f; break;
+    case 45: meanFlashTime = 0.5f; break;
+    default: break;
+  }
+
+  float p_flash = 1.0f - expf(-dt/meanFlashTime);
   float r_flash_decay = 1.0f - expf(-dt/__flash_decay_period);
 
   const int N = _pixbuf->getNumLeds();
