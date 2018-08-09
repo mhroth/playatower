@@ -79,11 +79,6 @@ void AnimLorenzPhasor::_process(double dt) {
 
     m_lowColour =  m_uniform(_gen) * 360;
 
-    printf("\n");
-    printf("x: [%0.3f, %0.3f]\n", m_minGlobalX, m_maxGlobalX);
-    printf("y: [%0.3f, %0.3f]\n", m_minGlobalY, m_maxGlobalY);
-    printf("z: [%0.3f, %0.3f]\n", m_minGlobalZ, m_maxGlobalZ);
-
     // reset osc limits
     // m_minGlobalX = INFINITY; m_maxGlobalX = -INFINITY;
     // m_minGlobalY = INFINITY; m_maxGlobalY = -INFINITY;
